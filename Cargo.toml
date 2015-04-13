@@ -1,0 +1,20 @@
+[package]
+
+name = "unicode-normalization"
+version = "0.0.1"
+authors = ["kwantam <kwantam@gmail.com>"]
+
+homepage = "https://github.com/unicode-rs/unicode-normalization"
+repository = "https://github.com/unicode-rs/unicode-normalization"
+documentation = "http://unicode-rs.github.io/unicode-normalization/unicode-normalization"
+
+license = "MIT/Apache 2.0"
+keywords = ["text", "unicode", "normalization", "nfkc", "nfc", "nfkd", "nfd"]
+readme = "README.md"
+description = """
+This crate provides functions for normalization of
+Unicode strings, including Canonical and Compatible
+Decomposition and Recomposition.
+"""
+
+exclude = [ "target/*", "Cargo.lock", "scripts/tmp" ]
