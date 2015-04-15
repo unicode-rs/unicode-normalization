@@ -34,7 +34,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! unicode-normalization = "0.0.2"
+//! unicode-normalization = "0.0.3"
 //! ```
 
 #![deny(missing_docs, unsafe_code)]
@@ -48,6 +48,8 @@ mod tables;
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod testdata;
 
 /// Methods for composing and decomposing characters.
 pub mod char {

@@ -87,3 +87,67 @@ fn test_nfkc_chars() {
     t!("\u{ac1c}", "\u{ac1c}");
     t!("a\u{300}\u{305}\u{315}\u{5ae}b", "\u{e0}\u{5ae}\u{305}\u{315}b");
 }
+
+#[test]
+fn test_official() {
+    use testdata::TEST_NORM;
+    macro_rules! normString {
+        ($fun: ident, $input: expr) => { UnicodeNormalization::$fun($input).collect::<String>() }
+    }
+
+    for &(s1, s2, s3, s4, s5) in TEST_NORM {
+        // these invariants come from the CONFORMANCE section of
+        // http://www.unicode.org/Public/UNIDATA/NormalizationTest.txt
+        {
+            let r1 = normString!(nfc_chars, s1);
+            let r2 = normString!(nfc_chars, s2);
+            let r3 = normString!(nfc_chars, s3);
+            let r4 = normString!(nfc_chars, s4);
+            let r5 = normString!(nfc_chars, s5);
+            assert_eq!(s2, &r1[..]);
+            assert_eq!(s2, &r2[..]);
+            assert_eq!(s2, &r3[..]);
+            assert_eq!(s4, &r4[..]);
+            assert_eq!(s4, &r5[..]);
+        }
+
+        {
+            let r1 = normString!(nfd_chars, s1);
+            let r2 = normString!(nfd_chars, s2);
+            let r3 = normString!(nfd_chars, s3);
+            let r4 = normString!(nfd_chars, s4);
+            let r5 = normString!(nfd_chars, s5);
+            assert_eq!(s3, &r1[..]);
+            assert_eq!(s3, &r2[..]);
+            assert_eq!(s3, &r3[..]);
+            assert_eq!(s5, &r4[..]);
+            assert_eq!(s5, &r5[..]);
+        }
+
+        {
+            let r1 = normString!(nfkc_chars, s1);
+            let r2 = normString!(nfkc_chars, s2);
+            let r3 = normString!(nfkc_chars, s3);
+            let r4 = normString!(nfkc_chars, s4);
+            let r5 = normString!(nfkc_chars, s5);
+            assert_eq!(s4, &r1[..]);
+            assert_eq!(s4, &r2[..]);
+            assert_eq!(s4, &r3[..]);
+            assert_eq!(s4, &r4[..]);
+            assert_eq!(s4, &r5[..]);
+        }
+
+        {
+            let r1 = normString!(nfkd_chars, s1);
+            let r2 = normString!(nfkd_chars, s2);
+            let r3 = normString!(nfkd_chars, s3);
+            let r4 = normString!(nfkd_chars, s4);
+            let r5 = normString!(nfkd_chars, s5);
+            assert_eq!(s5, &r1[..]);
+            assert_eq!(s5, &r2[..]);
+            assert_eq!(s5, &r3[..]);
+            assert_eq!(s5, &r4[..]);
+            assert_eq!(s5, &r5[..]);
+        }
+    }
+}
