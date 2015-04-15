@@ -8,13 +8,14 @@ homepage = "https://github.com/unicode-rs/unicode-normalization"
 repository = "https://github.com/unicode-rs/unicode-normalization"
 documentation = "https://unicode-rs.github.io/unicode-normalization"
 
-license = "MIT/Apache 2.0"
+license = "MIT/Apache-2.0"
 keywords = ["text", "unicode", "normalization", "decomposition", "recomposition"]
 readme = "README.md"
 description = """
 This crate provides functions for normalization of
 Unicode strings, including Canonical and Compatible
-Decomposition and Recomposition.
+Decomposition and Recomposition, as described in
+Unicode Standard Annex #11.
 """
 
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp" ]
