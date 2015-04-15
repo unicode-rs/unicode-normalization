@@ -1,7 +1,7 @@
 [package]
 
 name = "unicode-normalization"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["kwantam <kwantam@gmail.com>"]
 
 homepage = "https://github.com/unicode-rs/unicode-normalization"
@@ -15,7 +15,7 @@ description = """
 This crate provides functions for normalization of
 Unicode strings, including Canonical and Compatible
 Decomposition and Recomposition, as described in
-Unicode Standard Annex #11.
+Unicode Standard Annex #15.
 """
 
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp" ]

@@ -34,7 +34,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! unicode-normalization = "0.0.1"
+//! unicode-normalization = "0.0.2"
 //! ```
 
 #![deny(missing_docs, unsafe_code)]
