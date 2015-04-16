@@ -138,6 +138,14 @@ def group_cat(cat):
     cat_out.append((cur_start, cur_end))
     return cat_out
 
+def ungroup_cat(cat):
+    cat_out = []
+    for (lo, hi) in cat:
+        while lo <= hi:
+            cat_out.append(lo)
+            lo += 1
+    return cat_out
+
 def to_combines(combs):
     combs_out = []
     for comb in combs:
@@ -191,6 +199,11 @@ def load_properties(f, interestingprops):
         if prop not in props:
             props[prop] = []
         props[prop].append((d_lo, d_hi))
+
+    # optimize if possible
+    for prop in props:
+        props[prop] = group_cat(ungroup_cat(props[prop]))
+
     return props
 
 def escape_char(c):
