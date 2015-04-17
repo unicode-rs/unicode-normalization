@@ -38,6 +38,8 @@
 //! ```
 
 #![deny(missing_docs, unsafe_code)]
+#![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
+       html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
 
 pub use tables::UNICODE_VERSION;
 
