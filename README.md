@@ -8,13 +8,13 @@ as described in
 extern crate unicode_normalization;
 
 use unicode_normalization::char::compose;
-use unicode_normalization::str::UnicodeNormalization;
+use unicode_normalization::nfc;
 
 fn main() {
     assert_eq!(compose('A','\u{30a}'), Some('Å'));
-    
+
     let s = "ÅΩ";
-    let c = UnicodeNormalization::nfc_chars(s).collect::<String>();
+    let c = nfc(s.chars()).collect::<String>();
     assert_eq!(c, "ÅΩ");
 }
 ```
