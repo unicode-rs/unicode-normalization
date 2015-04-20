@@ -4,6 +4,8 @@ as described in
 
 [![Build Status](https://travis-ci.org/unicode-rs/unicode-normalization.svg)](https://travis-ci.org/unicode-rs/unicode-normalization)
 
+[Documentation](https://unicode-rs.github.io/unicode-normalization/unicode_normalization/index.html)
+
 ```rust
 extern crate unicode_normalization;
 
