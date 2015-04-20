@@ -22,7 +22,7 @@
 //!     assert_eq!(compose('A','\u{30a}'), Some('Å'));
 //!     
 //!     let s = "ÅΩ";
-//!     let c = UnicodeNormalization::nfc_chars(s).collect::<String>();
+//!     let c = UnicodeNormalization::nfc(s).collect::<String>();
 //!     assert_eq!(c, "ÅΩ");
 //! }
 //! ```
@@ -61,54 +61,77 @@ pub mod char {
     pub use tables::normalization::canonical_combining_class;
 }
 
-/// Methods for applying composition and decomposition to strings.
+/// Methods for applying composition and decomposition to strings and char iterators.
 pub mod str {
     pub use super::decompose::Decompositions;
     pub use super::recompose::Recompositions;
+    use std::str::Chars;
 
     /// Methods for iterating over strings while applying Unicode normalizations
-    /// as described in 
+    /// as described in
     /// [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/).
-    pub trait UnicodeNormalization {
+    pub trait UnicodeNormalization<I: Iterator<Item=char>> {
         /// Returns an iterator over the string in Unicode Normalization Form D
         /// (canonical decomposition).
         #[inline]
-        fn nfd_chars(&self) -> Decompositions;
+        fn nfd(self) -> Decompositions<I>;
 
         /// Returns an iterator over the string in Unicode Normalization Form KD
         /// (compatibility decomposition).
         #[inline]
-        fn nfkd_chars(&self) -> Decompositions;
+        fn nfkd(self) -> Decompositions<I>;
 
         /// An Iterator over the string in Unicode Normalization Form C
         /// (canonical decomposition followed by canonical composition).
         #[inline]
-        fn nfc_chars(&self) -> Recompositions;
+        fn nfc(self) -> Recompositions<I>;
 
         /// An Iterator over the string in Unicode Normalization Form KC
         /// (compatibility decomposition followed by canonical composition).
         #[inline]
-        fn nfkc_chars(&self) -> Recompositions;
+        fn nfkc(self) -> Recompositions<I>;
     }
 
-    impl UnicodeNormalization for str {
+    impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
         #[inline]
-        fn nfd_chars(&self) -> Decompositions {
+        fn nfd(self) -> Decompositions<Chars<'a>> {
+            super::decompose::new_canonical(self.chars())
+        }
+
+        #[inline]
+        fn nfkd(self) -> Decompositions<Chars<'a>> {
+            super::decompose::new_compatible(self.chars())
+        }
+
+        #[inline]
+        fn nfc(self) -> Recompositions<Chars<'a>> {
+            super::recompose::new_canonical(self.chars())
+        }
+
+        #[inline]
+        fn nfkc(self) -> Recompositions<Chars<'a>> {
+            super::recompose::new_compatible(self.chars())
+        }
+    }
+
+    impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
+        #[inline]
+        fn nfd(self) -> Decompositions<I> {
             super::decompose::new_canonical(self)
         }
 
         #[inline]
-        fn nfkd_chars(&self) -> Decompositions {
+        fn nfkd(self) -> Decompositions<I> {
             super::decompose::new_compatible(self)
         }
 
         #[inline]
-        fn nfc_chars(&self) -> Recompositions {
+        fn nfc(self) -> Recompositions<I> {
             super::recompose::new_canonical(self)
         }
 
         #[inline]
-        fn nfkc_chars(&self) -> Recompositions {
+        fn nfkc(self) -> Recompositions<I> {
             super::recompose::new_compatible(self)
         }
     }
