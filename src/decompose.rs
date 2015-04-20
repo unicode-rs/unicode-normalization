@@ -8,7 +8,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::str::Chars;
 
 // Helper functions used for Unicode normalization
 fn canonical_sort(comb: &mut [(char, u8)]) {
@@ -35,34 +34,36 @@ enum DecompositionType {
 
 /// External iterator for a string decomposition's characters.
 #[derive(Clone)]
-pub struct Decompositions<'a> {
+pub struct Decompositions<I> {
     kind: DecompositionType,
-    iter: Chars<'a>,
+    iter: I,
     buffer: Vec<(char, u8)>,
     sorted: bool
 }
 
+/// Transform a `char` iterator into Unicode Normalization Form D (canonical decomposition).
 #[inline]
-pub fn new_canonical<'a>(s: &'a str) -> Decompositions<'a> {
+pub fn nfd<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
-        iter: s.chars(),
+        iter: iter,
         buffer: Vec::new(),
         sorted: false,
-        kind: self::DecompositionType::Canonical,
+        kind: DecompositionType::Canonical,
     }
 }
 
+/// Transform a `char` iterator into Unicode Normalization Form KD (compatibility decomposition).
 #[inline]
-pub fn new_compatible<'a>(s: &'a str) -> Decompositions<'a> {
+pub fn nfkd<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
-        iter: s.chars(),
+        iter: iter,
         buffer: Vec::new(),
         sorted: false,
-        kind: self::DecompositionType::Compatible,
+        kind: DecompositionType::Compatible,
     }
 }
 
-impl<'a> Iterator for Decompositions<'a> {
+impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
     type Item = char;
 
     #[inline]

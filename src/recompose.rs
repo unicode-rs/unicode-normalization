@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use std::collections::VecDeque;
-use super::str::{Decompositions, UnicodeNormalization};
+use decompose::{nfd, nfkd, Decompositions};
 
 #[derive(Clone)]
 enum RecompositionState {
@@ -20,37 +20,41 @@ enum RecompositionState {
 
 /// External iterator for a string recomposition's characters.
 #[derive(Clone)]
-pub struct Recompositions<'a> {
-    iter: Decompositions<'a>,
+pub struct Recompositions<I> {
+    iter: Decompositions<I>,
     state: RecompositionState,
     buffer: VecDeque<char>,
     composee: Option<char>,
     last_ccc: Option<u8>
 }
 
+/// Transform a `char` iterator into Unicode Normalization Form C
+/// (canonical decomposition followed by canonical composition).
 #[inline]
-pub fn new_canonical<'a>(s: &'a str) -> Recompositions<'a> {
+pub fn nfc<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
-        iter: UnicodeNormalization::nfd_chars(s),
-        state: self::RecompositionState::Composing,
+        iter: nfd(iter),
+        state: RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,
         last_ccc: None,
     }
 }
 
+/// Transform a `char` iterator into Unicode Normalization Form KC
+/// (compatibility decomposition followed by canonical composition).
 #[inline]
-pub fn new_compatible<'a>(s: &'a str) -> Recompositions<'a> {
+pub fn nfkc<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
-        iter: UnicodeNormalization::nfkd_chars(s),
-        state : self::RecompositionState::Composing,
+        iter: nfkd(iter),
+        state : RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,
         last_ccc: None,
     }
 }
 
-impl<'a> Iterator for Recompositions<'a> {
+impl<I: Iterator<Item=char>> Iterator for Recompositions<I> {
     type Item = char;
 
     #[inline]
