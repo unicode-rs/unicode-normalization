@@ -15,6 +15,8 @@ fn test_nfd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
             assert_eq!($input.nfd().collect::<String>(), $expected);
+            // A dummy iterator that is not std::str::Chars directly:
+            assert_eq!($input.chars().map(|c| c).nfd().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
