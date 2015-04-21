@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use std::collections::VecDeque;
-use super::str::Decompositions;
+use decompose::Decompositions;
 
 #[derive(Clone)]
 enum RecompositionState {
