@@ -8,23 +8,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use super::str::UnicodeNormalization;
-
-#[test]
-fn test_casefold() {
-    let u = "ABCDEFGH";
-    let l = "abcdefgh";
-    assert_eq!(&u.nfd().map(|c| c.to_lowercase().next().unwrap_or(c))
-                 .nfkd().map(|c| c.to_lowercase().next().unwrap_or(c))
-                 .nfkd().collect::<String>()[..],
-               l);
-}
+use UnicodeNormalization;
 
 #[test]
 fn test_nfd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfd($input).collect::<String>(), $expected);
+            assert_eq!($input.nfd().collect::<String>(), $expected);
+            // A dummy iterator that is not std::str::Chars directly:
+            assert_eq!($input.chars().map(|c| c).nfd().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -43,7 +35,7 @@ fn test_nfd() {
 fn test_nfkd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfkd($input).collect::<String>(), $expected);
+            assert_eq!($input.nfkd().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -62,7 +54,7 @@ fn test_nfkd() {
 fn test_nfc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfc($input).collect::<String>(), $expected);
+            assert_eq!($input.nfc().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -82,7 +74,7 @@ fn test_nfc() {
 fn test_nfkc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfkc($input).collect::<String>(), $expected);
+            assert_eq!($input.nfkc().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -102,7 +94,7 @@ fn test_nfkc() {
 fn test_official() {
     use testdata::TEST_NORM;
     macro_rules! normString {
-        ($fun: ident, $input: expr) => { UnicodeNormalization::$fun($input).collect::<String>() }
+        ($method: ident, $input: expr) => { $input.$method().collect::<String>() }
     }
 
     for &(s1, s2, s3, s4, s5) in TEST_NORM {
