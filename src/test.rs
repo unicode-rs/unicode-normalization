@@ -8,13 +8,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use super::str::UnicodeNormalization;
+use UnicodeNormalization;
 
 #[test]
-fn test_nfd_chars() {
+fn test_nfd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfd_chars($input).collect::<String>(), $expected);
+            assert_eq!($input.nfd().collect::<String>(), $expected);
+            // A dummy iterator that is not std::str::Chars directly:
+            assert_eq!($input.chars().map(|c| c).nfd().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -30,10 +32,10 @@ fn test_nfd_chars() {
 }
 
 #[test]
-fn test_nfkd_chars() {
+fn test_nfkd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfkd_chars($input).collect::<String>(), $expected);
+            assert_eq!($input.nfkd().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -49,10 +51,10 @@ fn test_nfkd_chars() {
 }
 
 #[test]
-fn test_nfc_chars() {
+fn test_nfc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfc_chars($input).collect::<String>(), $expected);
+            assert_eq!($input.nfc().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -69,10 +71,10 @@ fn test_nfc_chars() {
 }
 
 #[test]
-fn test_nfkc_chars() {
+fn test_nfkc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!(UnicodeNormalization::nfkc_chars($input).collect::<String>(), $expected);
+            assert_eq!($input.nfkc().collect::<String>(), $expected);
         }
     }
     t!("abc", "abc");
@@ -92,18 +94,18 @@ fn test_nfkc_chars() {
 fn test_official() {
     use testdata::TEST_NORM;
     macro_rules! normString {
-        ($fun: ident, $input: expr) => { UnicodeNormalization::$fun($input).collect::<String>() }
+        ($method: ident, $input: expr) => { $input.$method().collect::<String>() }
     }
 
     for &(s1, s2, s3, s4, s5) in TEST_NORM {
         // these invariants come from the CONFORMANCE section of
         // http://www.unicode.org/Public/UNIDATA/NormalizationTest.txt
         {
-            let r1 = normString!(nfc_chars, s1);
-            let r2 = normString!(nfc_chars, s2);
-            let r3 = normString!(nfc_chars, s3);
-            let r4 = normString!(nfc_chars, s4);
-            let r5 = normString!(nfc_chars, s5);
+            let r1 = normString!(nfc, s1);
+            let r2 = normString!(nfc, s2);
+            let r3 = normString!(nfc, s3);
+            let r4 = normString!(nfc, s4);
+            let r5 = normString!(nfc, s5);
             assert_eq!(s2, &r1[..]);
             assert_eq!(s2, &r2[..]);
             assert_eq!(s2, &r3[..]);
@@ -112,11 +114,11 @@ fn test_official() {
         }
 
         {
-            let r1 = normString!(nfd_chars, s1);
-            let r2 = normString!(nfd_chars, s2);
-            let r3 = normString!(nfd_chars, s3);
-            let r4 = normString!(nfd_chars, s4);
-            let r5 = normString!(nfd_chars, s5);
+            let r1 = normString!(nfd, s1);
+            let r2 = normString!(nfd, s2);
+            let r3 = normString!(nfd, s3);
+            let r4 = normString!(nfd, s4);
+            let r5 = normString!(nfd, s5);
             assert_eq!(s3, &r1[..]);
             assert_eq!(s3, &r2[..]);
             assert_eq!(s3, &r3[..]);
@@ -125,11 +127,11 @@ fn test_official() {
         }
 
         {
-            let r1 = normString!(nfkc_chars, s1);
-            let r2 = normString!(nfkc_chars, s2);
-            let r3 = normString!(nfkc_chars, s3);
-            let r4 = normString!(nfkc_chars, s4);
-            let r5 = normString!(nfkc_chars, s5);
+            let r1 = normString!(nfkc, s1);
+            let r2 = normString!(nfkc, s2);
+            let r3 = normString!(nfkc, s3);
+            let r4 = normString!(nfkc, s4);
+            let r5 = normString!(nfkc, s5);
             assert_eq!(s4, &r1[..]);
             assert_eq!(s4, &r2[..]);
             assert_eq!(s4, &r3[..]);
@@ -138,11 +140,11 @@ fn test_official() {
         }
 
         {
-            let r1 = normString!(nfkd_chars, s1);
-            let r2 = normString!(nfkd_chars, s2);
-            let r3 = normString!(nfkd_chars, s3);
-            let r4 = normString!(nfkd_chars, s4);
-            let r5 = normString!(nfkd_chars, s5);
+            let r1 = normString!(nfkd, s1);
+            let r2 = normString!(nfkd, s2);
+            let r3 = normString!(nfkd, s3);
+            let r4 = normString!(nfkd, s4);
+            let r5 = normString!(nfkd, s5);
             assert_eq!(s5, &r1[..]);
             assert_eq!(s5, &r2[..]);
             assert_eq!(s5, &r3[..]);

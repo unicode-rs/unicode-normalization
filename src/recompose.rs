@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use std::collections::VecDeque;
-use super::str::{Decompositions, UnicodeNormalization};
+use decompose::Decompositions;
 
 #[derive(Clone)]
 enum RecompositionState {
@@ -20,8 +20,8 @@ enum RecompositionState {
 
 /// External iterator for a string recomposition's characters.
 #[derive(Clone)]
-pub struct Recompositions<'a> {
-    iter: Decompositions<'a>,
+pub struct Recompositions<I> {
+    iter: Decompositions<I>,
     state: RecompositionState,
     buffer: VecDeque<char>,
     composee: Option<char>,
@@ -29,9 +29,9 @@ pub struct Recompositions<'a> {
 }
 
 #[inline]
-pub fn new_canonical<'a>(s: &'a str) -> Recompositions<'a> {
+pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
-        iter: UnicodeNormalization::nfd_chars(s),
+        iter: super::decompose::new_canonical(iter),
         state: self::RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,
@@ -40,9 +40,9 @@ pub fn new_canonical<'a>(s: &'a str) -> Recompositions<'a> {
 }
 
 #[inline]
-pub fn new_compatible<'a>(s: &'a str) -> Recompositions<'a> {
+pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
-        iter: UnicodeNormalization::nfkd_chars(s),
+        iter: super::decompose::new_compatible(iter),
         state : self::RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,
@@ -50,7 +50,7 @@ pub fn new_compatible<'a>(s: &'a str) -> Recompositions<'a> {
     }
 }
 
-impl<'a> Iterator for Recompositions<'a> {
+impl<I: Iterator<Item=char>> Iterator for Recompositions<I> {
     type Item = char;
 
     #[inline]
