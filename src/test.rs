@@ -11,16 +11,6 @@
 use super::str::UnicodeNormalization;
 
 #[test]
-fn test_casefold() {
-    let u = "ABCDEFGH";
-    let l = "abcdefgh";
-    assert_eq!(&u.nfd().map(|c| c.to_lowercase().next().unwrap_or(c))
-                 .nfkd().map(|c| c.to_lowercase().next().unwrap_or(c))
-                 .nfkd().collect::<String>()[..],
-               l);
-}
-
-#[test]
 fn test_nfd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
