@@ -26,5 +26,5 @@ to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-unicode-normalization = "0.0.3"
+unicode-normalization = "0.1.0"
 ```
