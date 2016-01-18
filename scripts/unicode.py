@@ -69,6 +69,7 @@ def load_unicode_data(f):
     combines = {}
     canon_decomp = {}
     compat_decomp = {}
+    general_category_mark = []
 
     udict = {};
     range_start = -1;
@@ -112,9 +113,13 @@ def load_unicode_data(f):
                 combines[combine] = []
             combines[combine].append(code)
 
+        if 'M' in [gencat] + expanded_categories.get(gencat, []):
+            general_category_mark.append(code)
+    general_category_mark = group_cat(general_category_mark)
+
     combines = to_combines(group_cats(combines))
 
-    return (canon_decomp, compat_decomp, combines)
+    return (canon_decomp, compat_decomp, combines, general_category_mark)
 
 def group_cats(cats):
     cats_out = {}
@@ -225,7 +230,7 @@ def emit_table(f, name, t_data, t_type = "&'static [(char, char)]", is_pub=True,
     format_table_content(f, data, 8)
     f.write("\n    ];\n\n")
 
-def emit_norm_module(f, canon, compat, combine, norm_props):
+def emit_norm_module(f, canon, compat, combine, norm_props, general_category_mark):
     canon_keys = canon.keys()
     canon_keys.sort()
 
@@ -309,6 +314,31 @@ def emit_norm_module(f, canon, compat, combine, norm_props):
         + "    }\n")
 
     f.write("""
+    fn bsearch_range_table(c: char, r: &'static [(char, char)]) -> bool {
+        use std::cmp::Ordering::{Equal, Less, Greater};
+        r.binary_search_by(|&(lo, hi)| {
+             if lo <= c && c <= hi {
+                 Equal
+             } else if hi < c {
+                 Less
+             } else {
+                 Greater
+             }
+         })
+         .is_ok()
+    }
+
+    /// Return whether the given character is a combining mark (`General_Category=Mark`)
+    pub fn is_combining_mark(c: char) -> bool {
+        bsearch_range_table(c, general_category_mark)
+    }
+
+""")
+
+    emit_table(f, "general_category_mark", combine, "&'static [(char, char)]", is_pub=False,
+            pfun=lambda x: "(%s,%s)" % (escape_char(x[0]), escape_char(x[1])))
+
+    f.write("""
 }
 
 """)
@@ -332,9 +362,11 @@ if __name__ == "__main__":
 pub const UNICODE_VERSION: (u64, u64, u64) = (%s, %s, %s);
 
 """ % unicode_version)
-        (canon_decomp, compat_decomp, combines) = load_unicode_data("UnicodeData.txt")
+        (canon_decomp, compat_decomp, combines, general_category_mark) = \
+            load_unicode_data("UnicodeData.txt")
         norm_props = load_properties("DerivedNormalizationProps.txt",
                      ["Full_Composition_Exclusion"])
 
         # normalizations and conversions module
-        emit_norm_module(rf, canon_decomp, compat_decomp, combines, norm_props)
+        emit_norm_module(rf, canon_decomp, compat_decomp, combines, norm_props,
+                         general_category_mark)

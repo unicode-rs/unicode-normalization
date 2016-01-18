@@ -62,6 +62,9 @@ pub mod char {
 
     /// Look up the canonical combining class of a character.
     pub use tables::normalization::canonical_combining_class;
+
+    /// Return whether the given character is a combining mark (`General_Category=Mark`)
+    pub use tables::normalization::is_combining_mark;
 }
 
 
