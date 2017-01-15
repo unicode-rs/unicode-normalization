@@ -14,8 +14,9 @@ use UnicodeNormalization;
 fn test_nfd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!($input.nfd().collect::<String>(), $expected);
-            // A dummy iterator that is not std::str::Chars directly:
+            assert_eq!($input.nfd().to_string(), $expected);
+            // A dummy iterator that is not std::str::Chars directly;
+            // note that `id_func` is used to ensure `Clone` implementation
             assert_eq!($input.chars().map(|c| c).nfd().collect::<String>(), $expected);
         }
     }
@@ -35,7 +36,7 @@ fn test_nfd() {
 fn test_nfkd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!($input.nfkd().collect::<String>(), $expected);
+            assert_eq!($input.nfkd().to_string(), $expected);
         }
     }
     t!("abc", "abc");
@@ -54,7 +55,7 @@ fn test_nfkd() {
 fn test_nfc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!($input.nfc().collect::<String>(), $expected);
+            assert_eq!($input.nfc().to_string(), $expected);
         }
     }
     t!("abc", "abc");
@@ -74,7 +75,7 @@ fn test_nfc() {
 fn test_nfkc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
-            assert_eq!($input.nfkc().collect::<String>(), $expected);
+            assert_eq!($input.nfkc().to_string(), $expected);
         }
     }
     t!("abc", "abc");
