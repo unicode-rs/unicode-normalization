@@ -220,13 +220,8 @@ def emit_table(f, name, t_data, t_type = "&'static [(char, char)]", is_pub=True,
     if is_pub:
         pub_string = "pub "
     f.write("    %sconst %s: %s = &[\n" % (pub_string, name, t_type))
-    data = ""
-    first = True
-    for dat in t_data:
-        if not first:
-            data += ","
-        first = False
-        data += pfun(dat)
+    data = [pfun(d) for d in t_data]
+    data = ','.join(data)
     format_table_content(f, data, 8)
     f.write("\n    ];\n\n")
 
@@ -255,12 +250,8 @@ def emit_norm_module(f, canon, compat, combine, norm_props, general_category_mar
     def mkdata_fun(table):
         def f(char):
             data = "(%s,&[" % escape_char(char)
-            first = True
-            for d in table[char]:
-                if not first:
-                    data += ","
-                first = False
-                data += escape_char(d)
+            chars = [escape_char(d) for d in table[char]]
+            data += ','.join(chars)
             data += "])"
             return data
         return f
@@ -276,12 +267,8 @@ def emit_norm_module(f, canon, compat, combine, norm_props, general_category_mar
     def comp_pfun(char):
         data = "(%s,&[" % escape_char(char)
         canon_comp[char].sort(lambda x, y: x[0] - y[0])
-        first = True
-        for pair in canon_comp[char]:
-            if not first:
-                data += ","
-            first = False
-            data += "(%s,%s)" % (escape_char(pair[0]), escape_char(pair[1]))
+        data += ','.join("(%s,%s)" % (escape_char(pair[0]), escape_char(pair[1]))
+                         for pair in canon_comp[char])
         data += "])"
         return data
 
