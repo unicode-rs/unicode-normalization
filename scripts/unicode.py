@@ -160,19 +160,9 @@ def to_combines(combs):
     return combs_out
 
 def format_table_content(f, content, indent):
-    line = " "*indent
-    first = True
-    for chunk in content.split(","):
-        if len(line) + len(chunk) < 98:
-            if first:
-                line += chunk
-            else:
-                line += ", " + chunk
-            first = False
-        else:
-            f.write(line + ",\n")
-            line = " "*indent + chunk
-    f.write(line)
+    indent = " "*indent
+    for c in content:
+        f.write("%s%s,\n" % (indent, c))
 
 def load_properties(f, interestingprops):
     fetch(f)
@@ -220,9 +210,7 @@ def emit_table(f, name, t_data, t_type = "&'static [(char, char)]", is_pub=True,
     if is_pub:
         pub_string = "pub "
     f.write("    %sconst %s: %s = &[\n" % (pub_string, name, t_type))
-    data = [pfun(d) for d in t_data]
-    data = ','.join(data)
-    format_table_content(f, data, 8)
+    format_table_content(f, [pfun(d) for d in t_data], 8)
     f.write("\n    ];\n\n")
 
 def emit_norm_module(f, canon, compat, combine, norm_props, general_category_mark):
