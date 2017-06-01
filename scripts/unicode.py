@@ -350,7 +350,7 @@ pub struct Slice {
 
 """)
 
-    emit_table(f, "general_category_mark", combine, "&'static [(char, char)]", is_pub=False,
+    emit_table(f, "general_category_mark", general_category_mark, "&'static [(char, char)]", is_pub=False,
             pfun=lambda x: "(%s,%s)" % (escape_char(x[0]), escape_char(x[1])))
 
     f.write("""
