@@ -8,7 +8,11 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use UnicodeNormalization;
+
+use std::char;
+use super::UnicodeNormalization;
+use super::char::is_combining_mark;
+
 
 #[test]
 fn test_nfd() {
@@ -153,4 +157,25 @@ fn test_official() {
             assert_eq!(s5, &r5[..]);
         }
     }
+}
+
+
+
+#[test]
+fn test_is_combining_mark_ascii() {
+    for cp in 0..0x7f {
+        assert!(!is_combining_mark(char::from_u32(cp).unwrap()));
+    }
+}
+
+#[test]
+fn test_is_combining_mark_misc() {
+    // https://github.com/unicode-rs/unicode-normalization/issues/16
+    // U+11C3A BHAIKSUKI VOWEL SIGN O
+    // Category: Mark, Nonspacing [Mn]
+    assert!(is_combining_mark('\u{11C3A}'));
+
+    // U+11C3F BHAIKSUKI SIGN VIRAMA
+    // Category: Mark, Nonspacing [Mn]
+    assert!(is_combining_mark('\u{11C3F}'));
 }
