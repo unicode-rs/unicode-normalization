@@ -19,3 +19,6 @@ Unicode Standard Annex #15.
 """
 
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt" ]
+
+[badges]
+travis-ci = { repository = "unicode-rs/unicode-normalization" }
