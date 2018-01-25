@@ -8,10 +8,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use std::collections::VecDeque;
 use std::fmt::{self, Write};
+use std::iter::Peekable;
+
+const COMBINING_GRAPHEME_JOINER: char = '\u{034F}';
 
 // Helper functions used for Unicode normalization
-fn canonical_sort(comb: &mut [(char, u8)]) {
+fn canonical_sort(comb: &mut VecDeque<(char, u8)>) {
     let len = comb.len();
     for i in 0..len {
         let mut swapped = false;
@@ -35,30 +39,31 @@ enum DecompositionType {
 
 /// External iterator for a string decomposition's characters.
 #[derive(Clone)]
-pub struct Decompositions<I> {
+pub struct Decompositions<I: Iterator<Item=char>> {
     kind: DecompositionType,
-    iter: I,
-    buffer: Vec<(char, u8)>,
-    sorted: bool
+    iter: Peekable<I>,
+    buffer: VecDeque<(char, u8)>,
+    // True to use the http://unicode.org/reports/tr15/#UAX15-D4 variant of decomposition.
+    stream_safe: bool
 }
 
 #[inline]
-pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
+pub fn new_canonical<I: Iterator<Item=char>>(iter: I, stream_safe: bool) -> Decompositions<I> {
     Decompositions {
-        iter: iter,
-        buffer: Vec::new(),
-        sorted: false,
+        iter: iter.peekable(),
+        buffer: VecDeque::with_capacity(32),
         kind: self::DecompositionType::Canonical,
+        stream_safe: stream_safe,
     }
 }
 
 #[inline]
-pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
+pub fn new_compatible<I: Iterator<Item=char>>(iter: I, stream_safe: bool) -> Decompositions<I> {
     Decompositions {
-        iter: iter,
-        buffer: Vec::new(),
-        sorted: false,
+        iter: iter.peekable(),
+        buffer: VecDeque::with_capacity(32),
         kind: self::DecompositionType::Compatible,
+        stream_safe: stream_safe,
     }
 }
 
@@ -69,63 +74,72 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
     fn next(&mut self) -> Option<char> {
         use self::DecompositionType::*;
 
-        match self.buffer.first() {
-            Some(&(c, 0)) => {
-                self.sorted = false;
-                self.buffer.remove(0);
+        match self.buffer.pop_front() {
+            Some((c, _)) => {
                 return Some(c);
             }
-            Some(&(c, _)) if self.sorted => {
-                self.buffer.remove(0);
-                return Some(c);
-            }
-            _ => self.sorted = false
-        }
+            _ => {}
+        };
 
-        if !self.sorted {
-            for ch in self.iter.by_ref() {
-                let buffer = &mut self.buffer;
-                let sorted = &mut self.sorted;
-                {
-                    let callback = |d| {
-                        let class =
-                            super::char::canonical_combining_class(d);
-                        if class == 0 && !*sorted {
-                            canonical_sort(buffer);
-                            *sorted = true;
+        let mut non_starter_count = 0;
+        let stream_safe = self.stream_safe;
+
+        while self.iter.peek().is_some() {
+            let ch = self.iter.next().unwrap();
+            let ch_next = self.iter.peek();
+
+            let buffer = &mut self.buffer;
+            {
+                let callback = |d| {
+                    let class = super::char::canonical_combining_class(d);
+
+                    buffer.push_back((d, class));
+
+                    if stream_safe {
+                        if class == 0 {
+                            non_starter_count = 0;
+                        } else {
+                            non_starter_count += 1;
                         }
-                        buffer.push((d, class));
-                    };
-                    match self.kind {
-                        Canonical => {
-                            super::char::decompose_canonical(ch, callback)
-                        }
-                        Compatible => {
-                            super::char::decompose_compatible(ch, callback)
+
+                        if non_starter_count == 30 {
+                            match ch_next {
+                                Some(c) => {
+                                    if super::char::canonical_combining_class(*c) != 0 {
+                                        canonical_sort(buffer);
+                                        buffer.push_back((COMBINING_GRAPHEME_JOINER, 0));
+                                        non_starter_count = 0;
+                                    }
+                                }
+                                None => {}
+                            };
                         }
                     }
+                };
+                match self.kind {
+                    Canonical => {
+                        super::char::decompose_canonical(ch, callback)
+                    }
+                    Compatible => {
+                        super::char::decompose_compatible(ch, callback)
+                    }
                 }
-                if *sorted {
-                    break
-                }
+            }
+
+            if match ch_next {
+                Some(c) => super::char::canonical_combining_class(*c) == 0,
+                None => true,
+            } {
+                canonical_sort(buffer);
+                break
             }
         }
 
-        if !self.sorted {
-            canonical_sort(&mut self.buffer);
-            self.sorted = true;
-        }
-
-        if self.buffer.is_empty() {
-            None
-        } else {
-            match self.buffer.remove(0) {
-                (c, 0) => {
-                    self.sorted = false;
-                    Some(c)
-                }
-                (c, _) => Some(c),
+        match self.buffer.pop_front() {
+            Some((c, _)) => {
+                Some(c)
             }
+            _ => None
         }
     }
 

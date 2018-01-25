@@ -21,7 +21,7 @@ enum RecompositionState {
 
 /// External iterator for a string recomposition's characters.
 #[derive(Clone)]
-pub struct Recompositions<I> {
+pub struct Recompositions<I: Iterator<Item=char>> {
     iter: Decompositions<I>,
     state: RecompositionState,
     buffer: VecDeque<char>,
@@ -30,9 +30,9 @@ pub struct Recompositions<I> {
 }
 
 #[inline]
-pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
+pub fn new_canonical<I: Iterator<Item=char>>(iter: I, stream_safe: bool) -> Recompositions<I> {
     Recompositions {
-        iter: super::decompose::new_canonical(iter),
+        iter: super::decompose::new_canonical(iter, stream_safe),
         state: self::RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,
@@ -41,9 +41,9 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
 }
 
 #[inline]
-pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
+pub fn new_compatible<I: Iterator<Item=char>>(iter: I, stream_safe: bool) -> Recompositions<I> {
     Recompositions {
-        iter: super::decompose::new_compatible(iter),
+        iter: super::decompose::new_compatible(iter, stream_safe),
         state : self::RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,

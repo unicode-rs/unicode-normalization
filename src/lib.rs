@@ -77,6 +77,11 @@ pub trait UnicodeNormalization<I: Iterator<Item=char>> {
     #[inline]
     fn nfd(self) -> Decompositions<I>;
 
+    /// Returns an iterator over the string in Unicode Normalization Form D
+    /// (canonical decomposition), with the UAX15-D4 stream-safe extension.
+    #[inline]
+    fn nfd_stream_safe(self) -> Decompositions<I>;
+
     /// Returns an iterator over the string in Unicode Normalization Form KD
     /// (compatibility decomposition).
     #[inline]
@@ -87,6 +92,12 @@ pub trait UnicodeNormalization<I: Iterator<Item=char>> {
     #[inline]
     fn nfc(self) -> Recompositions<I>;
 
+    #[inline]
+    /// An Iterator over the string in Unicode Normalization Form C (canonical
+    /// decomposition followed by canonical composition), with the UAX15-D4
+    /// stream-safe extension.
+    fn nfc_stream_safe(self) -> Recompositions<I>;
+
     /// An Iterator over the string in Unicode Normalization Form KC
     /// (compatibility decomposition followed by canonical composition).
     #[inline]
@@ -96,43 +107,63 @@ pub trait UnicodeNormalization<I: Iterator<Item=char>> {
 impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     #[inline]
     fn nfd(self) -> Decompositions<Chars<'a>> {
-        decompose::new_canonical(self.chars())
+        decompose::new_canonical(self.chars(), false)
+    }
+
+    #[inline]
+    fn nfd_stream_safe(self) -> Decompositions<Chars<'a>> {
+        decompose::new_canonical(self.chars(), true)
     }
 
     #[inline]
     fn nfkd(self) -> Decompositions<Chars<'a>> {
-        decompose::new_compatible(self.chars())
+        decompose::new_compatible(self.chars(), false)
     }
 
     #[inline]
     fn nfc(self) -> Recompositions<Chars<'a>> {
-        recompose::new_canonical(self.chars())
+        recompose::new_canonical(self.chars(), false)
+    }
+
+    #[inline]
+    fn nfc_stream_safe(self) -> Recompositions<Chars<'a>> {
+        recompose::new_canonical(self.chars(), true)
     }
 
     #[inline]
     fn nfkc(self) -> Recompositions<Chars<'a>> {
-        recompose::new_compatible(self.chars())
+        recompose::new_compatible(self.chars(), false)
     }
 }
 
 impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfd(self) -> Decompositions<I> {
-        decompose::new_canonical(self)
+        decompose::new_canonical(self, false)
+    }
+
+    #[inline]
+    fn nfd_stream_safe(self) -> Decompositions<I> {
+        decompose::new_canonical(self, true)
     }
 
     #[inline]
     fn nfkd(self) -> Decompositions<I> {
-        decompose::new_compatible(self)
+        decompose::new_compatible(self, false)
     }
 
     #[inline]
     fn nfc(self) -> Recompositions<I> {
-        recompose::new_canonical(self)
+        recompose::new_canonical(self, false)
+    }
+
+    #[inline]
+    fn nfc_stream_safe(self) -> Recompositions<I> {
+        recompose::new_canonical(self, true)
     }
 
     #[inline]
     fn nfkc(self) -> Recompositions<I> {
-        recompose::new_compatible(self)
+        recompose::new_compatible(self, false)
     }
 }
