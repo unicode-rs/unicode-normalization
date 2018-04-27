@@ -6,41 +6,34 @@ extern crate test;
 use test::Bencher;
 use unicode_normalization::UnicodeNormalization;
 
-macro_rules! bench_check {
-    ($b: ident, $s: expr, $form: ident) => {
-        let s = $s;
-        $b.iter(|| s.chars().eq(s.$form()));
-    }
-}
-
 #[bench]
 fn bench_is_nfc_ascii(b: &mut Bencher) {
-    bench_check!(b, "all types of normalized", nfc);
+    b.iter(|| unicode_normalization::is_nfc("all types of normalized"));
 }
 
 #[bench]
 fn bench_is_nfc_normalized(b: &mut Bencher) {
-    bench_check!(b, "Introducci\u{00f3}n a Unicode.pdf", nfc);
+    b.iter(|| unicode_normalization::is_nfc("Introducci\u{00f3}n a Unicode.pdf"));
 }
 
 #[bench]
 fn bench_is_nfc_not_normalized(b: &mut Bencher) {
-    bench_check!(b, "Introduccio\u{0301}n a Unicode.pdf", nfc);
+    b.iter(|| unicode_normalization::is_nfc("Introduccio\u{0301}n a Unicode.pdf"));
 }
 
 #[bench]
 fn bench_is_nfd_ascii(b: &mut Bencher) {
-    bench_check!(b, "an easy string to check", nfd);
+    b.iter(|| unicode_normalization::is_nfd("an easy string to check"));
 }
 
 #[bench]
 fn bench_is_nfd_normalized(b: &mut Bencher) {
-    bench_check!(b, "Introduccio\u{0301}n a Unicode.pdf", nfd);
+    b.iter(|| unicode_normalization::is_nfd("Introduccio\u{0301}n a Unicode.pdf"));
 }
 
 #[bench]
 fn bench_is_nfd_not_normalized(b: &mut Bencher) {
-    bench_check!(b, "Introducci\u{00f3}n a Unicode.pdf", nfd);
+    b.iter(|| unicode_normalization::is_nfd("Introducci\u{00f3}n a Unicode.pdf"));
 }
 
 #[bench]

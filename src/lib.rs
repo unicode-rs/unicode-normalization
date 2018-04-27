@@ -37,34 +37,42 @@
 //! unicode-normalization = "0.1.3"
 //! ```
 
-#![deny(missing_docs, unsafe_code)]
+// #![deny(missing_docs, unsafe_code)]
 #![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
        html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
 
 pub use tables::UNICODE_VERSION;
 pub use decompose::Decompositions;
+pub use quick_check::{
+    IsNormalized,
+    is_nfc,
+    is_nfc_quick,
+    is_nfd,
+    is_nfd_quick,
+};
 pub use recompose::Recompositions;
 use std::str::Chars;
 
 mod decompose;
 mod normalize;
 mod recompose;
+mod quick_check;
 mod tables;
 
 #[cfg(test)]
 mod test;
 #[cfg(test)]
-mod testdata;
+mod normalization_tests;
 
 /// Methods for composing and decomposing characters.
 pub mod char {
     pub use normalize::{decompose_canonical, decompose_compatible, compose};
 
     /// Look up the canonical combining class of a character.
-    pub use tables::normalization::canonical_combining_class;
+    pub use tables::canonical_combining_class;
 
     /// Return whether the given character is a combining mark (`General_Category=Mark`)
-    pub use tables::normalization::is_combining_mark;
+    pub use tables::is_combining_mark;
 }
 
 

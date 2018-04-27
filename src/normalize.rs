@@ -10,101 +10,77 @@
 
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
 use std::char;
-use std::cmp::Ordering::{Equal, Less, Greater};
 use std::ops::FnMut;
-use tables::normalization::{canonical_table, canonical_table_STRTAB};
-use tables::normalization::{compatibility_table, compatibility_table_STRTAB};
-use tables::normalization::{composition_table, composition_table_STRTAB};
-use tables::normalization::Slice;
-
-fn bsearch_table<T>(c: char, r: &'static [(char, Slice)], strtab: &'static [T]) -> Option<&'static [T]> {
-    match r.binary_search_by(|&(val, _)| {
-        if c == val { Equal }
-        else if val < c { Less }
-        else { Greater }
-    }) {
-        Ok(idx) => {
-            let ref slice = r[idx].1;
-            let offset = slice.offset as usize;
-            let length = slice.length as usize;
-            Some(&strtab[offset..(offset + length)])
-        }
-        Err(_) => None
-    }
-}
+use tables;
 
 /// Compute canonical Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
-pub fn decompose_canonical<F>(c: char, mut i: F) where F: FnMut(char) { d(c, &mut i, false); }
+#[inline]
+pub fn decompose_canonical<F>(c: char, mut emit_char: F) where F: FnMut(char) {
+    // 7-bit ASCII never decomposes
+    if c <= '\x7f' {
+        emit_char(c);
+        return;
+    }
+
+    // Perform decomposition for Hangul
+    if (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT) {
+        decompose_hangul(c, emit_char);
+        return;
+    }
+
+    if let Some(decomposed) = tables::canonical_fully_decomposed(c) {
+        for &d in decomposed {
+            emit_char(d);
+        }
+        return;
+    }
+
+    // Finally bottom out.
+    emit_char(c);
+}
 
 /// Compute canonical or compatible Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
-pub fn decompose_compatible<F>(c: char, mut i: F) where F: FnMut(char) { d(c, &mut i, true); }
-
-// FIXME(#19596) This is a workaround, we should use `F` instead of `&mut F`
-fn d<F>(c: char, i: &mut F, k: bool) where F: FnMut(char) {
+#[inline]
+pub fn decompose_compatible<F: FnMut(char)>(c: char, mut emit_char: F) {
     // 7-bit ASCII never decomposes
-    if c <= '\x7f' { (*i)(c); return; }
-
-    // Perform decomposition for Hangul
-    if (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT) {
-        decompose_hangul(c, i);
+    if c <= '\x7f' {
+        emit_char(c);
         return;
     }
 
-    // First check the canonical decompositions
-    match bsearch_table(c, canonical_table, canonical_table_STRTAB) {
-        Some(canon) => {
-            for x in canon {
-                d(*x, i, k);
-            }
-            return;
-        }
-        None => ()
+    // Perform decomposition for Hangul
+    if (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT) {
+        decompose_hangul(c, emit_char);
+        return;
     }
 
-    // Bottom out if we're not doing compat.
-    if !k { (*i)(c); return; }
-
-    // Then check the compatibility decompositions
-    match bsearch_table(c, compatibility_table, compatibility_table_STRTAB) {
-        Some(compat) => {
-            for x in compat {
-                d(*x, i, k);
-            }
-            return;
+    if let Some(decomposed) = tables::compatibility_fully_decomposed(c) {
+        for &d in decomposed {
+            emit_char(d);
         }
-        None => ()
+        return;
+    }
+
+    if let Some(decomposed) = tables::canonical_fully_decomposed(c) {
+        for &d in decomposed {
+            emit_char(d);
+        }
+        return;
     }
 
     // Finally bottom out.
-    (*i)(c);
+    emit_char(c);
 }
 
 /// Compose two characters into a single character, if possible.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
 pub fn compose(a: char, b: char) -> Option<char> {
-    compose_hangul(a, b).or_else(|| {
-        match bsearch_table(a, composition_table, composition_table_STRTAB) {
-            None => None,
-            Some(candidates) => {
-                match candidates.binary_search_by(|&(val, _)| {
-                    if b == val { Equal }
-                    else if val < b { Less }
-                    else { Greater }
-                }) {
-                    Ok(idx) => {
-                        let (_, result) = candidates[idx];
-                        Some(result)
-                    }
-                    Err(_) => None
-                }
-            }
-        }
-    })
+    compose_hangul(a, b).or_else(|| tables::composition_table(a, b))
 }
 
 // Constants from Unicode 9.0.0 Section 3.12 Conjoining Jamo Behavior
@@ -119,23 +95,22 @@ const T_COUNT: u32 = 28;
 const N_COUNT: u32 = (V_COUNT * T_COUNT);
 const S_COUNT: u32 = (L_COUNT * N_COUNT);
 
-// FIXME(#19596) This is a workaround, we should use `F` instead of `&mut F`
 // Decompose a precomposed Hangul syllable
 #[allow(unsafe_code)]
 #[inline(always)]
-fn decompose_hangul<F>(s: char, f: &mut F) where F: FnMut(char) {
+fn decompose_hangul<F>(s: char, mut emit_char: F) where F: FnMut(char) {
     let si = s as u32 - S_BASE;
 
     let li = si / N_COUNT;
     unsafe {
-        (*f)(char::from_u32_unchecked(L_BASE + li));
+        emit_char(char::from_u32_unchecked(L_BASE + li));
 
         let vi = (si % N_COUNT) / T_COUNT;
-        (*f)(char::from_u32_unchecked(V_BASE + vi));
+        emit_char(char::from_u32_unchecked(V_BASE + vi));
 
         let ti = si % T_COUNT;
         if ti > 0 {
-            (*f)(char::from_u32_unchecked(T_BASE + ti));
+            emit_char(char::from_u32_unchecked(T_BASE + ti));
         }
     }
 }
