@@ -63,15 +63,16 @@ impl<I: Iterator<Item=char>> Iterator for Recompositions<I> {
                 Composing => {
                     for ch in self.iter.by_ref() {
                         let ch_class = super::char::canonical_combining_class(ch);
-                        if self.composee.is_none() {
-                            if ch_class != 0 {
-                                return Some(ch);
-                            }
-                            self.composee = Some(ch);
-                            continue;
-                        }
-                        let k = self.composee.clone().unwrap();
-
+                        let k = match self.composee {
+                            None => {
+                                if ch_class != 0 {
+                                    return Some(ch);
+                                }
+                                self.composee = Some(ch);
+                                continue;
+                            },
+                            Some(k) => k,
+                        };
                         match self.last_ccc {
                             None => {
                                 match super::char::compose(k, ch) {
