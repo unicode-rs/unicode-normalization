@@ -37,7 +37,7 @@
 //! unicode-normalization = "0.1.3"
 //! ```
 
-// #![deny(missing_docs, unsafe_code)]
+#![deny(missing_docs, unsafe_code)]
 #![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
        html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
 
@@ -51,12 +51,14 @@ pub use quick_check::{
     is_nfd_quick,
 };
 pub use recompose::Recompositions;
+pub use stream_safe::StreamSafe;
 use std::str::Chars;
 
 mod decompose;
 mod normalize;
 mod recompose;
 mod quick_check;
+mod stream_safe;
 mod tables;
 
 #[cfg(test)]
@@ -99,6 +101,11 @@ pub trait UnicodeNormalization<I: Iterator<Item=char>> {
     /// (compatibility decomposition followed by canonical composition).
     #[inline]
     fn nfkc(self) -> Recompositions<I>;
+
+    /// An Iterator over the string with Conjoining Grapheme Joiner characters
+    /// inserted according to the Stream-Safe Text Process (UAX15-D4)
+    #[inline]
+    fn stream_safe(self) -> StreamSafe<I>;
 }
 
 impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
@@ -121,6 +128,11 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     fn nfkc(self) -> Recompositions<Chars<'a>> {
         recompose::new_compatible(self.chars())
     }
+
+    #[inline]
+    fn stream_safe(self) -> StreamSafe<Chars<'a>> {
+        StreamSafe::new(self.chars())
+    }
 }
 
 impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
@@ -142,5 +154,10 @@ impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfkc(self) -> Recompositions<I> {
         recompose::new_compatible(self)
+    }
+
+    #[inline]
+    fn stream_safe(self) -> StreamSafe<I> {
+        StreamSafe::new(self)
     }
 }

@@ -1,9 +1,15 @@
 use UnicodeNormalization;
 use tables;
 
+/// The QuickCheck algorithm can quickly determine if a text is or isn't
+/// normalized without any allocations in many cases, but it has to be able to
+/// return `Maybe` when a full decomposition and recomposition is necessary.
 pub enum IsNormalized {
+    /// The text is definitely normalized.
     Yes,
+    /// The text is definitely not normalized.
     No,
+    /// The text may be normalized.
     Maybe,
 }
 
@@ -37,16 +43,21 @@ fn quick_check<F, I>(s: I, is_allowed: F) -> IsNormalized
     result
 }
 
+/// Quickly check if a string is in NFC, potentially returning
+/// `IsNormalized::Maybe` if further checks are necessary.  In this case a check
+/// like `s.chars().nfc().eq(s.chars())` should suffice.
 #[inline]
 pub fn is_nfc_quick<I: Iterator<Item=char>>(s: I) -> IsNormalized {
     quick_check(s, tables::qc_nfc)
 }
 
+/// Quickly check if a string is in NFD.
 #[inline]
 pub fn is_nfd_quick<I: Iterator<Item=char>>(s: I) -> IsNormalized {
     quick_check(s, tables::qc_nfd)
 }
 
+/// Authoritatively check if a string is in NFC.
 pub fn is_nfc(s: &str) -> bool {
     match is_nfc_quick(s.chars()) {
         IsNormalized::Yes => true,
@@ -55,6 +66,7 @@ pub fn is_nfc(s: &str) -> bool {
     }
 }
 
+/// Authoritatively check if a string is in NFD.
 pub fn is_nfd(s: &str) -> bool {
     match is_nfd_quick(s.chars()) {
         IsNormalized::Yes => true,

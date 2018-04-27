@@ -44,7 +44,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
 pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_compatible(iter),
-        state : self::RecompositionState::Composing,
+        state: self::RecompositionState::Composing,
         buffer: VecDeque::new(),
         composee: None,
         last_ccc: None,

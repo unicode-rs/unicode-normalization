@@ -76,6 +76,8 @@ class UnicodeData(object):
         stats("Canonical fully decomp", self.canon_fully_decomp)
         stats("Compatible fully decomp", self.compat_fully_decomp)
 
+        self.ss_leading, self.ss_trailing = self._compute_stream_safe_tables()
+
     def _fetch(self, filename):
         resp = requests.get(UCD_URL + filename)
         return resp.text
@@ -91,17 +93,18 @@ class UnicodeData(object):
             pieces = line.split(';')
             assert len(pieces) == 15
             char, category, cc, decomp = pieces[0], pieces[2], pieces[3], pieces[5]
+            char_int = int(char, 16)
 
             if cc != '0':
-                self.combining_classes[char] = cc
+                self.combining_classes[char_int] = cc
 
             if decomp.startswith('<'):
-                self.compat_decomp[char] = decomp.split()[1:]
+                self.compat_decomp[char_int] = [int(c, 16) for c in decomp.split()[1:]]
             elif decomp != '':
-                self.canon_decomp[char] = decomp.split()
+                self.canon_decomp[char_int] = [int(c, 16) for c in decomp.split()]
 
             if category == 'M' or 'M' in expanded_categories.get(category, []):
-                self.general_category_mark.append(char)
+                self.general_category_mark.append(char_int)
 
     def _load_norm_props(self):
         props = collections.defaultdict(list)
@@ -146,14 +149,13 @@ class UnicodeData(object):
             (int(low, 16), int(high or low, 16))
             for low, high, _ in self.norm_props["Full_Composition_Exclusion"]
         ]
-        for char, decomp in self.canon_decomp.items():
-            char_int = int(char, 16)
+        for char_int, decomp in self.canon_decomp.items():
             if any(lo <= char_int <= hi for lo, hi in comp_exclusions):
                 continue
 
             assert len(decomp) == 2
             assert (decomp[0], decomp[1]) not in canon_comp
-            canon_comp[(decomp[0], decomp[1])] = char
+            canon_comp[(decomp[0], decomp[1])] = char_int
 
         return canon_comp
 
@@ -181,15 +183,6 @@ class UnicodeData(object):
         S_BASE, L_COUNT, V_COUNT, T_COUNT = 0xAC00, 19, 21, 28
         S_COUNT = L_COUNT * V_COUNT * T_COUNT
 
-        canon_decomp = {
-            int(k, 16): [int(c, 16) for c in v]
-            for k, v in self.canon_decomp.items()
-        }
-        compat_decomp = {
-            int(k, 16): [int(c, 16) for c in v]
-            for k, v in self.compat_decomp.items()
-        }
-
         def _decompose(char_int, compatible):
             # 7-bit ASCII never decomposes
             if char_int <= 0x7f:
@@ -199,15 +192,15 @@ class UnicodeData(object):
             # Assert that we're handling Hangul separately.
             assert not (S_BASE <= char_int < S_BASE + S_COUNT)
 
-            decomp = canon_decomp.get(char_int)
+            decomp = self.canon_decomp.get(char_int)
             if decomp is not None:
                 for decomposed_ch in decomp:
                     for fully_decomposed_ch in _decompose(decomposed_ch, compatible):
                         yield fully_decomposed_ch
                 return
 
-            if compatible and char_int in compat_decomp:
-                for decomposed_ch in compat_decomp[char_int]:
+            if compatible and char_int in self.compat_decomp:
+                for decomposed_ch in self.compat_decomp[char_int]:
                     for fully_decomposed_ch in _decompose(decomposed_ch, compatible):
                         yield fully_decomposed_ch
                 return
@@ -216,12 +209,13 @@ class UnicodeData(object):
             return
 
         end_codepoint = max(
-            max(canon_decomp.keys()),
-            max(compat_decomp.keys()),
+            max(self.canon_decomp.keys()),
+            max(self.compat_decomp.keys()),
         )
 
-        canon_fully_decomposed = {}
-        compat_fully_decomposed = {}
+        canon_fully_decomp = {}
+        compat_fully_decomp = {}
+
         for char_int in range(0, end_codepoint + 1):
             # Always skip Hangul, since it's more efficient to represent its
             # decomposition programmatically.
@@ -230,31 +224,75 @@ class UnicodeData(object):
 
             canon = list(_decompose(char_int, False))
             if not (len(canon) == 1 and canon[0] == char_int):
-                canon_fully_decomposed[char_int] = canon
+                canon_fully_decomp[char_int] = canon
 
             compat = list(_decompose(char_int, True))
             if not (len(compat) == 1 and compat[0] == char_int):
-                compat_fully_decomposed[char_int] = compat
+                compat_fully_decomp[char_int] = compat
 
-        # Since canon_decomp is a subset of compat_decomp, we don't need to
-        # store their overlap when they agree.  When they don't agree, store the
-        # decomposition in the compatibility table since we'll check that first
-        # when normalizing to NFKD.
-        assert canon_fully_decomposed <= compat_fully_decomposed
+        # Since canon_fully_decomp is a subset of compat_fully_decomp, we don't
+        # need to store their overlap when they agree.  When they don't agree,
+        # store the decomposition in the compatibility table since we'll check
+        # that first when normalizing to NFKD.
+        assert canon_fully_decomp <= compat_fully_decomp
 
-        for ch in set(canon_fully_decomposed) & set(compat_fully_decomposed):
-            if canon_fully_decomposed[ch] == compat_fully_decomposed[ch]:
-                del compat_fully_decomposed[ch]
+        for ch in set(canon_fully_decomp) & set(compat_fully_decomp):
+            if canon_fully_decomp[ch] == compat_fully_decomp[ch]:
+                del compat_fully_decomp[ch]
 
-        return canon_fully_decomposed, compat_fully_decomposed
+        return canon_fully_decomp, compat_fully_decomp
+
+    def _compute_stream_safe_tables(self):
+        """
+        To make a text stream-safe with the Stream-Safe Text Process (UAX15-D4),
+        we need to be able to know the number of contiguous non-starters *after*
+        applying compatibility decomposition to each character.
+
+        We can do this incrementally by computing the number of leading and
+        trailing non-starters for each character's compatibility decomposition
+        with the following rules:
+
+        1) If a character is not affected by compatibility decomposition, look
+           up its canonical combining class to find out if it's a non-starter.
+        2) All Hangul characters are starters, even under decomposition.
+        3) Otherwise, very few decomposing characters have a nonzero count
+           of leading or trailing non-starters, so store these characters
+           with their associated counts in a separate table.
+        """
+        leading_nonstarters = {}
+        trailing_nonstarters = {}
+
+        for c in set(self.canon_fully_decomp) | set(self.compat_fully_decomp):
+            decomposed = self.compat_fully_decomp.get(c) or self.canon_fully_decomp[c]
+
+            num_leading = 0
+            for d in decomposed:
+                if d not in self.combining_classes:
+                    break
+                num_leading += 1
+
+            num_trailing = 0
+            for d in reversed(decomposed):
+                if d not in self.combining_classes:
+                    break
+                num_trailing += 1
+
+            if num_leading > 0:
+                leading_nonstarters[c] = num_leading
+            if num_trailing > 0:
+                trailing_nonstarters[c] = num_trailing
+
+        return leading_nonstarters, trailing_nonstarters
+
+hexify = lambda c: hex(c)[2:].upper().rjust(4, '0')
 
 def gen_combining_class(combining_classes, out):
     out.write("#[inline]\n")
     out.write("pub fn canonical_combining_class(c: char) -> u8 {\n")
     out.write("    match c {\n")
 
-    for char, combining_class in sorted(combining_classes.items(), key=lambda (k, _): int(k, 16)):
-        out.write("        '\u{%s}' => %s,\n" % (char, combining_class))
+    for char, combining_class in sorted(combining_classes.items()):
+        out.write("        '\u{%s}' => %s,\n" % (hexify(char), combining_class))
 
     out.write("        _ => 0,\n")
     out.write("    }\n")
@@ -265,8 +303,8 @@ def gen_composition_table(canon_comp, out):
     out.write("pub fn composition_table(c1: char, c2: char) -> Option<char> {\n")
     out.write("    match (c1, c2) {\n")
 
-    for (c1, c2), c3 in sorted(canon_comp.items(), key=lambda ((c1, c2), _): (int(c1, 16), int(c2, 16))):
-        out.write("        ('\u{%s}', '\u{%s}') => Some('\u{%s}'),\n" % (c1, c2, c3))
+    for (c1, c2), c3 in sorted(canon_comp.items()):
+        out.write("        ('\u{%s}', '\u{%s}') => Some('\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
 
     out.write("        _ => None,\n")
     out.write("    }\n")
@@ -278,8 +316,6 @@ def gen_decomposition_tables(canon_decomp, compat_decomp, out):
         out.write("#[inline]\n")
         out.write("pub fn %s_fully_decomposed(c: char) -> Option<&'static [char]> {\n" % name)
         out.write("    match c {\n")
-
-        hexify = lambda c: hex(c)[2:].upper()
 
         for char, chars in sorted(table.items()):
             d = ", ".join("'\u{%s}'" % hexify(c) for c in chars)
@@ -323,9 +359,33 @@ def gen_combining_mark(general_category_mark, out):
     out.write("    match c {\n")
 
     for char in general_category_mark:
-        out.write("        '\u{%s}' => true,\n" % char)
+        out.write("        '\u{%s}' => true,\n" % hexify(char))
 
     out.write("        _ => false,\n")
+    out.write("    }\n")
+    out.write("}\n")
+
+def gen_stream_safe(leading, trailing, out):
+    out.write("#[inline]\n")
+    out.write("pub fn stream_safe_leading_nonstarters(c: char) -> usize {\n")
+    out.write("    match c {\n")
+
+    for char, num_leading in leading.items():
+        out.write("        '\u{%s}' => %d,\n" % (hexify(char), num_leading))
+
+    out.write("        _ => 0,\n")
+    out.write("    }\n")
+    out.write("}\n")
+    out.write("\n")
+
+    out.write("#[inline]\n")
+    out.write("pub fn stream_safe_trailing_nonstarters(c: char) -> usize {\n")
+    out.write("    match c {\n")
+
+    for char, num_trailing in trailing.items():
+        out.write("        '\u{%s}' => %d,\n" % (hexify(char), num_trailing))
+
+    out.write("        _ => 0,\n")
     out.write("    }\n")
     out.write("}\n")
 
@@ -382,6 +442,9 @@ if __name__ == '__main__':
         out.write("\n")
 
         gen_nfd_qc(data.norm_props, out)
+        out.write("\n")
+
+        gen_stream_safe(data.ss_leading, data.ss_trailing, out)
         out.write("\n")
 
     with open("normalization_tests.rs", "w") as out:

@@ -17,35 +17,24 @@ use tables;
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
 #[inline]
-pub fn decompose_canonical<F>(c: char, mut emit_char: F) where F: FnMut(char) {
-    // 7-bit ASCII never decomposes
-    if c <= '\x7f' {
-        emit_char(c);
-        return;
-    }
-
-    // Perform decomposition for Hangul
-    if (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT) {
-        decompose_hangul(c, emit_char);
-        return;
-    }
-
-    if let Some(decomposed) = tables::canonical_fully_decomposed(c) {
-        for &d in decomposed {
-            emit_char(d);
-        }
-        return;
-    }
-
-    // Finally bottom out.
-    emit_char(c);
+pub fn decompose_canonical<F>(c: char, emit_char: F) where F: FnMut(char) {
+    decompose(c, tables::canonical_fully_decomposed, emit_char)
 }
 
 /// Compute canonical or compatible Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
 #[inline]
-pub fn decompose_compatible<F: FnMut(char)>(c: char, mut emit_char: F) {
+pub fn decompose_compatible<F: FnMut(char)>(c: char, emit_char: F) {
+    let decompose_char = |c| tables::compatibility_fully_decomposed(c)
+        .or_else(|| tables::canonical_fully_decomposed(c));
+    decompose(c, decompose_char, emit_char)
+}
+
+#[inline]
+fn decompose<D, F>(c: char, decompose_char: D, mut emit_char: F)
+    where D: Fn(char) -> Option<&'static [char]>, F: FnMut(char)
+{
     // 7-bit ASCII never decomposes
     if c <= '\x7f' {
         emit_char(c);
@@ -53,19 +42,12 @@ pub fn decompose_compatible<F: FnMut(char)>(c: char, mut emit_char: F) {
     }
 
     // Perform decomposition for Hangul
-    if (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT) {
+    if is_hangul(c) {
         decompose_hangul(c, emit_char);
         return;
     }
 
-    if let Some(decomposed) = tables::compatibility_fully_decomposed(c) {
-        for &d in decomposed {
-            emit_char(d);
-        }
-        return;
-    }
-
-    if let Some(decomposed) = tables::canonical_fully_decomposed(c) {
+    if let Some(decomposed) = decompose_char(c) {
         for &d in decomposed {
             emit_char(d);
         }
@@ -95,6 +77,10 @@ const T_COUNT: u32 = 28;
 const N_COUNT: u32 = (V_COUNT * T_COUNT);
 const S_COUNT: u32 = (L_COUNT * N_COUNT);
 
+pub(crate) fn is_hangul(c: char) -> bool {
+    (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT)
+}
+
 // Decompose a precomposed Hangul syllable
 #[allow(unsafe_code)]
 #[inline(always)]
@@ -113,6 +99,13 @@ fn decompose_hangul<F>(s: char, mut emit_char: F) where F: FnMut(char) {
             emit_char(char::from_u32_unchecked(T_BASE + ti));
         }
     }
+}
+
+#[inline]
+pub(crate) fn hangul_decomposition_length(s: char) -> usize {
+    let si = s as u32 - S_BASE;
+    let ti = si % T_COUNT;
+    if ti > 0 { 3 } else { 2 }
 }
 
 // Compose a pair of Hangul Jamo
