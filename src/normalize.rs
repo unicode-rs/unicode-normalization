@@ -9,7 +9,7 @@
 // except according to those terms.
 
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
-
+use std::char;
 use std::cmp::Ordering::{Equal, Less, Greater};
 use std::ops::FnMut;
 use tables::normalization::{canonical_table, canonical_table_STRTAB};
@@ -124,20 +124,18 @@ const S_COUNT: u32 = (L_COUNT * N_COUNT);
 #[allow(unsafe_code)]
 #[inline(always)]
 fn decompose_hangul<F>(s: char, f: &mut F) where F: FnMut(char) {
-    use std::mem::transmute;
-
     let si = s as u32 - S_BASE;
 
     let li = si / N_COUNT;
     unsafe {
-        (*f)(transmute(L_BASE + li));
+        (*f)(char::from_u32_unchecked(L_BASE + li));
 
         let vi = (si % N_COUNT) / T_COUNT;
-        (*f)(transmute(V_BASE + vi));
+        (*f)(char::from_u32_unchecked(V_BASE + vi));
 
         let ti = si % T_COUNT;
         if ti > 0 {
-            (*f)(transmute(T_BASE + ti));
+            (*f)(char::from_u32_unchecked(T_BASE + ti));
         }
     }
 }
@@ -146,22 +144,20 @@ fn decompose_hangul<F>(s: char, f: &mut F) where F: FnMut(char) {
 #[allow(unsafe_code)]
 #[inline(always)]
 fn compose_hangul(a: char, b: char) -> Option<char> {
-    use std::mem::transmute;
-
     let l = a as u32;
     let v = b as u32;
     // Compose an LPart and a VPart
     if L_BASE <= l && l < (L_BASE + L_COUNT) // l should be an L choseong jamo
         && V_BASE <= v && v < (V_BASE + V_COUNT) { // v should be a V jungseong jamo
         let r = S_BASE + (l - L_BASE) * N_COUNT + (v - V_BASE) * T_COUNT;
-        return unsafe { Some(transmute(r)) };
+        return unsafe { Some(char::from_u32_unchecked(r)) };
     }
     // Compose an LVPart and a TPart
     if S_BASE <= l && l <= (S_BASE+S_COUNT-T_COUNT) // l should be a syllable block
         && T_BASE <= v && v < (T_BASE+T_COUNT) // v should be a T jongseong jamo
         && (l - S_BASE) % T_COUNT == 0 { // l should be an LV syllable block (not LVT)
         let r = l + (v - T_BASE);
-        return unsafe { Some(transmute(r)) };
+        return unsafe { Some(char::from_u32_unchecked(r)) };
     }
     None
 }
