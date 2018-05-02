@@ -9,102 +9,60 @@
 // except according to those terms.
 
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
-
-use std::cmp::Ordering::{Equal, Less, Greater};
+use std::char;
 use std::ops::FnMut;
-use tables::normalization::{canonical_table, canonical_table_STRTAB};
-use tables::normalization::{compatibility_table, compatibility_table_STRTAB};
-use tables::normalization::{composition_table, composition_table_STRTAB};
-use tables::normalization::Slice;
-
-fn bsearch_table<T>(c: char, r: &'static [(char, Slice)], strtab: &'static [T]) -> Option<&'static [T]> {
-    match r.binary_search_by(|&(val, _)| {
-        if c == val { Equal }
-        else if val < c { Less }
-        else { Greater }
-    }) {
-        Ok(idx) => {
-            let ref slice = r[idx].1;
-            let offset = slice.offset as usize;
-            let length = slice.length as usize;
-            Some(&strtab[offset..(offset + length)])
-        }
-        Err(_) => None
-    }
-}
+use tables;
 
 /// Compute canonical Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
-pub fn decompose_canonical<F>(c: char, mut i: F) where F: FnMut(char) { d(c, &mut i, false); }
+#[inline]
+pub fn decompose_canonical<F>(c: char, emit_char: F) where F: FnMut(char) {
+    decompose(c, tables::canonical_fully_decomposed, emit_char)
+}
 
 /// Compute canonical or compatible Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
-pub fn decompose_compatible<F>(c: char, mut i: F) where F: FnMut(char) { d(c, &mut i, true); }
+#[inline]
+pub fn decompose_compatible<F: FnMut(char)>(c: char, emit_char: F) {
+    let decompose_char = |c| tables::compatibility_fully_decomposed(c)
+        .or_else(|| tables::canonical_fully_decomposed(c));
+    decompose(c, decompose_char, emit_char)
+}
 
-// FIXME(#19596) This is a workaround, we should use `F` instead of `&mut F`
-fn d<F>(c: char, i: &mut F, k: bool) where F: FnMut(char) {
+#[inline]
+fn decompose<D, F>(c: char, decompose_char: D, mut emit_char: F)
+    where D: Fn(char) -> Option<&'static [char]>, F: FnMut(char)
+{
     // 7-bit ASCII never decomposes
-    if c <= '\x7f' { (*i)(c); return; }
-
-    // Perform decomposition for Hangul
-    if (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT) {
-        decompose_hangul(c, i);
+    if c <= '\x7f' {
+        emit_char(c);
         return;
     }
 
-    // First check the canonical decompositions
-    match bsearch_table(c, canonical_table, canonical_table_STRTAB) {
-        Some(canon) => {
-            for x in canon {
-                d(*x, i, k);
-            }
-            return;
-        }
-        None => ()
+    // Perform decomposition for Hangul
+    if is_hangul(c) {
+        decompose_hangul(c, emit_char);
+        return;
     }
 
-    // Bottom out if we're not doing compat.
-    if !k { (*i)(c); return; }
-
-    // Then check the compatibility decompositions
-    match bsearch_table(c, compatibility_table, compatibility_table_STRTAB) {
-        Some(compat) => {
-            for x in compat {
-                d(*x, i, k);
-            }
-            return;
+    if let Some(decomposed) = decompose_char(c) {
+        for &d in decomposed {
+            emit_char(d);
         }
-        None => ()
+        return;
     }
 
     // Finally bottom out.
-    (*i)(c);
+    emit_char(c);
 }
 
 /// Compose two characters into a single character, if possible.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
 pub fn compose(a: char, b: char) -> Option<char> {
-    compose_hangul(a, b).or_else(|| {
-        match bsearch_table(a, composition_table, composition_table_STRTAB) {
-            None => None,
-            Some(candidates) => {
-                match candidates.binary_search_by(|&(val, _)| {
-                    if b == val { Equal }
-                    else if val < b { Less }
-                    else { Greater }
-                }) {
-                    Ok(idx) => {
-                        let (_, result) = candidates[idx];
-                        Some(result)
-                    }
-                    Err(_) => None
-                }
-            }
-        }
-    })
+    compose_hangul(a, b).or_else(|| tables::composition_table(a, b))
 }
 
 // Constants from Unicode 9.0.0 Section 3.12 Conjoining Jamo Behavior
@@ -119,49 +77,55 @@ const T_COUNT: u32 = 28;
 const N_COUNT: u32 = (V_COUNT * T_COUNT);
 const S_COUNT: u32 = (L_COUNT * N_COUNT);
 
-// FIXME(#19596) This is a workaround, we should use `F` instead of `&mut F`
+pub(crate) fn is_hangul(c: char) -> bool {
+    (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT)
+}
+
 // Decompose a precomposed Hangul syllable
 #[allow(unsafe_code)]
 #[inline(always)]
-fn decompose_hangul<F>(s: char, f: &mut F) where F: FnMut(char) {
-    use std::mem::transmute;
-
+fn decompose_hangul<F>(s: char, mut emit_char: F) where F: FnMut(char) {
     let si = s as u32 - S_BASE;
 
     let li = si / N_COUNT;
     unsafe {
-        (*f)(transmute(L_BASE + li));
+        emit_char(char::from_u32_unchecked(L_BASE + li));
 
         let vi = (si % N_COUNT) / T_COUNT;
-        (*f)(transmute(V_BASE + vi));
+        emit_char(char::from_u32_unchecked(V_BASE + vi));
 
         let ti = si % T_COUNT;
         if ti > 0 {
-            (*f)(transmute(T_BASE + ti));
+            emit_char(char::from_u32_unchecked(T_BASE + ti));
         }
     }
+}
+
+#[inline]
+pub(crate) fn hangul_decomposition_length(s: char) -> usize {
+    let si = s as u32 - S_BASE;
+    let ti = si % T_COUNT;
+    if ti > 0 { 3 } else { 2 }
 }
 
 // Compose a pair of Hangul Jamo
 #[allow(unsafe_code)]
 #[inline(always)]
 fn compose_hangul(a: char, b: char) -> Option<char> {
-    use std::mem::transmute;
-
     let l = a as u32;
     let v = b as u32;
     // Compose an LPart and a VPart
     if L_BASE <= l && l < (L_BASE + L_COUNT) // l should be an L choseong jamo
         && V_BASE <= v && v < (V_BASE + V_COUNT) { // v should be a V jungseong jamo
         let r = S_BASE + (l - L_BASE) * N_COUNT + (v - V_BASE) * T_COUNT;
-        return unsafe { Some(transmute(r)) };
+        return unsafe { Some(char::from_u32_unchecked(r)) };
     }
     // Compose an LVPart and a TPart
     if S_BASE <= l && l <= (S_BASE+S_COUNT-T_COUNT) // l should be a syllable block
         && T_BASE <= v && v < (T_BASE+T_COUNT) // v should be a T jongseong jamo
         && (l - S_BASE) % T_COUNT == 0 { // l should be an LV syllable block (not LVT)
         let r = l + (v - T_BASE);
-        return unsafe { Some(transmute(r)) };
+        return unsafe { Some(char::from_u32_unchecked(r)) };
     }
     None
 }
