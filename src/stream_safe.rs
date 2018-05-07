@@ -1,6 +1,6 @@
 use normalize::{
     hangul_decomposition_length,
-    is_hangul,
+    is_hangul_syllable,
 };
 use tables;
 
@@ -71,7 +71,7 @@ fn classify_nonstarters(c: char) -> Decomposition {
         }
     }
     // Next, special case Hangul, since it's not handled by our tables.
-    if is_hangul(c) {
+    if is_hangul_syllable(c) {
         return Decomposition {
             leading_nonstarters: 0,
             trailing_nonstarters: 0,
