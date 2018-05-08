@@ -42,7 +42,7 @@ fn decompose<D, F>(c: char, decompose_char: D, mut emit_char: F)
     }
 
     // Perform decomposition for Hangul
-    if is_hangul(c) {
+    if is_hangul_syllable(c) {
         decompose_hangul(c, emit_char);
         return;
     }
@@ -77,7 +77,16 @@ const T_COUNT: u32 = 28;
 const N_COUNT: u32 = (V_COUNT * T_COUNT);
 const S_COUNT: u32 = (L_COUNT * N_COUNT);
 
-pub(crate) fn is_hangul(c: char) -> bool {
+const S_LAST: u32 = S_BASE + S_COUNT - 1;
+const L_LAST: u32 = L_BASE + L_COUNT - 1;
+const V_LAST: u32 = V_BASE + V_COUNT - 1;
+const T_LAST: u32 = T_BASE + T_COUNT - 1;
+
+// Composition only occurs for `TPart`s in `U+11A8 ... U+11C2`,
+// i.e. `T_BASE + 1 ... T_LAST`.
+const T_FIRST: u32 = T_BASE + 1;
+
+pub(crate) fn is_hangul_syllable(c: char) -> bool {
     (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT)
 }
 
@@ -85,18 +94,17 @@ pub(crate) fn is_hangul(c: char) -> bool {
 #[allow(unsafe_code)]
 #[inline(always)]
 fn decompose_hangul<F>(s: char, mut emit_char: F) where F: FnMut(char) {
-    let si = s as u32 - S_BASE;
-
-    let li = si / N_COUNT;
+    let s_index = s as u32 - S_BASE;
+    let l_index = s_index / N_COUNT;
     unsafe {
-        emit_char(char::from_u32_unchecked(L_BASE + li));
+        emit_char(char::from_u32_unchecked(L_BASE + l_index));
 
-        let vi = (si % N_COUNT) / T_COUNT;
-        emit_char(char::from_u32_unchecked(V_BASE + vi));
+        let v_index = (s_index % N_COUNT) / T_COUNT;
+        emit_char(char::from_u32_unchecked(V_BASE + v_index));
 
-        let ti = si % T_COUNT;
-        if ti > 0 {
-            emit_char(char::from_u32_unchecked(T_BASE + ti));
+        let t_index = s_index % T_COUNT;
+        if t_index > 0 {
+            emit_char(char::from_u32_unchecked(T_BASE + t_index));
         }
     }
 }
@@ -112,20 +120,33 @@ pub(crate) fn hangul_decomposition_length(s: char) -> usize {
 #[allow(unsafe_code)]
 #[inline(always)]
 fn compose_hangul(a: char, b: char) -> Option<char> {
-    let l = a as u32;
-    let v = b as u32;
-    // Compose an LPart and a VPart
-    if L_BASE <= l && l < (L_BASE + L_COUNT) // l should be an L choseong jamo
-        && V_BASE <= v && v < (V_BASE + V_COUNT) { // v should be a V jungseong jamo
-        let r = S_BASE + (l - L_BASE) * N_COUNT + (v - V_BASE) * T_COUNT;
-        return unsafe { Some(char::from_u32_unchecked(r)) };
+    let (a, b) = (a as u32, b as u32);
+    match (a, b) {
+        // Compose a leading consonant and a vowel together into an LV_Syllable
+        (L_BASE ... L_LAST, V_BASE ... V_LAST) => {
+            let l_index = a - L_BASE;
+            let v_index = b - V_BASE;
+            let lv_index = l_index * N_COUNT + v_index * T_COUNT;
+            let s = S_BASE + lv_index;
+            Some(unsafe {char::from_u32_unchecked(s)})
+        },
+        // Compose an LV_Syllable and a trailing consonant into an LVT_Syllable
+        (S_BASE ... S_LAST, T_FIRST ... T_LAST) if (a - S_BASE) % T_COUNT == 0 => {
+            Some(unsafe {char::from_u32_unchecked(a + (b - T_BASE))})
+        },
+        _ => None,
     }
-    // Compose an LVPart and a TPart
-    if S_BASE <= l && l <= (S_BASE+S_COUNT-T_COUNT) // l should be a syllable block
-        && T_BASE <= v && v < (T_BASE+T_COUNT) // v should be a T jongseong jamo
-        && (l - S_BASE) % T_COUNT == 0 { // l should be an LV syllable block (not LVT)
-        let r = l + (v - T_BASE);
-        return unsafe { Some(char::from_u32_unchecked(r)) };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::compose_hangul;
+
+    // Regression test from a bugfix where we were composing an LV_Syllable with
+    // T_BASE directly. (We should only compose an LV_Syllable with a character
+    // in the range `T_BASE + 1 ... T_LAST`.)
+    #[test]
+    fn test_hangul_composition() {
+        assert_eq!(compose_hangul('\u{c8e0}', '\u{11a7}'), None);
     }
-    None
 }
