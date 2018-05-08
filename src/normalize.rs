@@ -77,14 +77,14 @@ const T_COUNT: u32 = 28;
 const N_COUNT: u32 = (V_COUNT * T_COUNT);
 const S_COUNT: u32 = (L_COUNT * N_COUNT);
 
-const S_END: u32 = S_BASE + S_COUNT - 1;
-const L_END: u32 = L_BASE + L_COUNT - 1;
-const V_END: u32 = V_BASE + V_COUNT - 1;
-const T_END: u32 = T_BASE + T_COUNT - 1;
+const S_LAST: u32 = S_BASE + S_COUNT - 1;
+const L_LAST: u32 = L_BASE + L_COUNT - 1;
+const V_LAST: u32 = V_BASE + V_COUNT - 1;
+const T_LAST: u32 = T_BASE + T_COUNT - 1;
 
 // Composition only occurs for `TPart`s in `U+11A8 ... U+11C2`,
-// i.e. `T_BASE + 1 ... T_END`.
-const T_START: u32 = T_BASE + 1;
+// i.e. `T_BASE + 1 ... T_LAST`.
+const T_FIRST: u32 = T_BASE + 1;
 
 pub(crate) fn is_hangul_syllable(c: char) -> bool {
     (c as u32) >= S_BASE && (c as u32) < (S_BASE + S_COUNT)
@@ -123,7 +123,7 @@ fn compose_hangul(a: char, b: char) -> Option<char> {
     let (a, b) = (a as u32, b as u32);
     match (a, b) {
         // Compose a leading consonant and a vowel together into an LV_Syllable
-        (L_BASE ... L_END, V_BASE ... V_END) => {
+        (L_BASE ... L_LAST, V_BASE ... V_LAST) => {
             let l_index = a - L_BASE;
             let v_index = b - V_BASE;
             let lv_index = l_index * N_COUNT + v_index * T_COUNT;
@@ -131,7 +131,7 @@ fn compose_hangul(a: char, b: char) -> Option<char> {
             Some(unsafe {char::from_u32_unchecked(s)})
         },
         // Compose an LV_Syllable and a trailing consonant into an LVT_Syllable
-        (S_BASE ... S_END, T_START ... T_END) if (a - S_BASE) % T_COUNT == 0 => {
+        (S_BASE ... S_LAST, T_FIRST ... T_LAST) if (a - S_BASE) % T_COUNT == 0 => {
             Some(unsafe {char::from_u32_unchecked(a + (b - T_BASE))})
         },
         _ => None,
@@ -144,7 +144,7 @@ mod tests {
 
     // Regression test from a bugfix where we were composing an LV_Syllable with
     // T_BASE directly. (We should only compose an LV_Syllable with a character
-    // in the range `T_BASE + 1 ... T_END`.)
+    // in the range `T_BASE + 1 ... T_LAST`.)
     #[test]
     fn test_hangul_composition() {
         assert_eq!(compose_hangul('\u{c8e0}', '\u{11a7}'), None);
