@@ -6,52 +6,83 @@ extern crate test;
 use test::Bencher;
 use unicode_normalization::UnicodeNormalization;
 
+const ASCII: &'static str = "all types of normalized";
+const NFC: &'static str = "Introducci\u{00f3}n a Unicode.pdf";
+const NFD: &'static str = "Introduccio\u{0301}n a Unicode.pdf";
+
 #[bench]
 fn bench_is_nfc_ascii(b: &mut Bencher) {
-    b.iter(|| unicode_normalization::is_nfc("all types of normalized"));
+    b.iter(|| unicode_normalization::is_nfc(ASCII));
 }
 
 #[bench]
 fn bench_is_nfc_normalized(b: &mut Bencher) {
-    b.iter(|| unicode_normalization::is_nfc("Introducci\u{00f3}n a Unicode.pdf"));
+    b.iter(|| unicode_normalization::is_nfc(NFC));
 }
 
 #[bench]
 fn bench_is_nfc_not_normalized(b: &mut Bencher) {
-    b.iter(|| unicode_normalization::is_nfc("Introduccio\u{0301}n a Unicode.pdf"));
+    b.iter(|| unicode_normalization::is_nfc(NFD));
 }
 
 #[bench]
 fn bench_is_nfd_ascii(b: &mut Bencher) {
-    b.iter(|| unicode_normalization::is_nfd("an easy string to check"));
+    b.iter(|| unicode_normalization::is_nfd(ASCII));
 }
 
 #[bench]
 fn bench_is_nfd_normalized(b: &mut Bencher) {
-    b.iter(|| unicode_normalization::is_nfd("Introduccio\u{0301}n a Unicode.pdf"));
+    b.iter(|| unicode_normalization::is_nfd(NFD));
 }
 
 #[bench]
 fn bench_is_nfd_not_normalized(b: &mut Bencher) {
-    b.iter(|| unicode_normalization::is_nfd("Introducci\u{00f3}n a Unicode.pdf"));
+    b.iter(|| unicode_normalization::is_nfd(NFC));
+}
+
+#[bench]
+fn bench_is_nfc_stream_safe_ascii(b: &mut Bencher) {
+    b.iter(|| unicode_normalization::is_nfc_stream_safe(ASCII));
+}
+
+#[bench]
+fn bench_is_nfc_stream_safe_normalized(b: &mut Bencher) {
+    b.iter(|| unicode_normalization::is_nfc_stream_safe(NFC));
+}
+
+#[bench]
+fn bench_is_nfc_stream_safe_not_normalized(b: &mut Bencher) {
+    b.iter(|| unicode_normalization::is_nfc_stream_safe(NFD));
+}
+
+#[bench]
+fn bench_is_nfd_stream_safe_ascii(b: &mut Bencher) {
+    b.iter(|| unicode_normalization::is_nfd_stream_safe(ASCII));
+}
+
+#[bench]
+fn bench_is_nfd_stream_safe_normalized(b: &mut Bencher) {
+    b.iter(|| unicode_normalization::is_nfd_stream_safe(NFD));
+}
+
+#[bench]
+fn bench_is_nfd_stream_safe_not_normalized(b: &mut Bencher) {
+    b.iter(|| unicode_normalization::is_nfd_stream_safe(NFC));
 }
 
 #[bench]
 fn bench_nfc_ascii(b: &mut Bencher) {
-    let s = "normalize me please";
-    b.iter(|| s.nfc().count());
+    b.iter(|| ASCII.nfc().count());
 }
 
 #[bench]
 fn bench_nfd_ascii(b: &mut Bencher) {
-    let s = "decompose me entirely";
-    b.iter(|| s.nfd().count());
+    b.iter(|| ASCII.nfd().count());
 }
 
 #[bench]
 fn bench_streamsafe_ascii(b: &mut Bencher) {
-    let s = "quite nonthreatening";
-    b.iter(|| s.stream_safe().count());
+    b.iter(|| ASCII.stream_safe().count());
 }
 
 #[bench]

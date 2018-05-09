@@ -47,8 +47,12 @@ pub use quick_check::{
     IsNormalized,
     is_nfc,
     is_nfc_quick,
+    is_nfc_stream_safe,
+    is_nfc_stream_safe_quick,
     is_nfd,
     is_nfd_quick,
+    is_nfd_stream_safe,
+    is_nfd_stream_safe_quick,
 };
 pub use recompose::Recompositions;
 pub use stream_safe::StreamSafe;

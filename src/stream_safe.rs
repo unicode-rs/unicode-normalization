@@ -4,7 +4,7 @@ use normalize::{
 };
 use tables;
 
-const MAX_NONSTARTERS: usize = 30;
+pub(crate) const MAX_NONSTARTERS: usize = 30;
 const COMBINING_GRAPHEME_JOINER: char = '\u{034F}';
 
 /// UAX15-D4: This iterator keeps track of how many non-starters there have been
@@ -54,14 +54,14 @@ impl<I: Iterator<Item=char>> Iterator for StreamSafe<I> {
 }
 
 #[derive(Debug)]
-struct Decomposition {
-    leading_nonstarters: usize,
-    trailing_nonstarters: usize,
-    decomposition_len: usize,
+pub(crate) struct Decomposition {
+    pub(crate) leading_nonstarters: usize,
+    pub(crate) trailing_nonstarters: usize,
+    pub(crate) decomposition_len: usize,
 }
 
 #[inline]
-fn classify_nonstarters(c: char) -> Decomposition {
+pub(crate) fn classify_nonstarters(c: char) -> Decomposition {
     // As usual, fast path for ASCII (which is always a starter)
     if c <= '\x7f' {
         return Decomposition {
