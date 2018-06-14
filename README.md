@@ -6,6 +6,8 @@ as described in
 
 [Documentation](https://unicode-rs.github.io/unicode-normalization/unicode_normalization/index.html)
 
+This crate requires Rust 1.21+.
+
 ```rust
 extern crate unicode_normalization;
 
