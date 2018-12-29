@@ -109,7 +109,6 @@ fn bench_nfkc_long(b: &mut Bencher) {
     b.iter(|| long.nfkc().count());
 }
 
-
 #[bench]
 fn bench_nfkd_long(b: &mut Bencher) {
     let long = fs::read_to_string("benches/long.txt").unwrap();

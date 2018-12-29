@@ -8,6 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 use std::fmt::{self, Write};
+use buffer::Buffer;
 
 #[derive(Clone)]
 enum DecompositionType {
@@ -20,7 +21,6 @@ enum DecompositionType {
 pub struct Decompositions<I> {
     kind: DecompositionType,
     iter: I,
-    done: bool,
 
     // This buffer stores pairs of (canonical combining class, character),
     // pushed onto the end in text order.
@@ -29,7 +29,7 @@ pub struct Decompositions<I> {
     // `ready` pairs are sorted and ready to emit on demand.  The "pending"
     // suffix afterwards still needs more characters for us to be able to sort
     // in canonical order and is not safe to emit.
-    buffer: Vec<(u8, char)>,
+    buffer: Buffer<(u8, char)>,
     ready: usize,
 }
 
@@ -38,8 +38,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
         iter: iter,
-        done: false,
-        buffer: Vec::new(),
+        buffer: Buffer::new(),
         ready: 0,
     }
 }
@@ -49,32 +48,41 @@ pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
         iter: iter,
-        done: false,
-        buffer: Vec::new(),
+        buffer: Buffer::new(),
         ready: 0,
     }
+}
+
+#[inline]
+fn sort_by_combining_class(data: &mut [(u8, char)]) {
+    // NB: `sort_by_key` is stable, so it will preserve the original text's
+    // order within a combining class.
+    data.sort_by_key(|k| k.0);
 }
 
 impl<I> Decompositions<I> {
     #[inline]
     fn push_back(&mut self, ch: char) {
         let class = super::char::canonical_combining_class(ch);
+
         if class == 0 {
-            self.sort_pending();
+            let ready = &mut self.ready;
+            self.buffer.mutate_and_push_back((class, ch), |prior_data| {
+                sort_by_combining_class(&mut prior_data[*ready..]);
+                *ready = prior_data.len();
+            });
+        } else {
+            self.buffer.push_back((class, ch));
         }
-        self.buffer.push((class, ch));
     }
 
     #[inline]
     fn sort_pending(&mut self) {
-        if self.ready == 0 && self.buffer.is_empty() {
-            return;
-        }
-
-        // NB: `sort_by_key` is stable, so it will preserve the original text's
-        // order within a combining class.
-        self.buffer[self.ready..].sort_by_key(|k| k.0);
-        self.ready = self.buffer.len();
+        let ready = &mut self.ready;
+        self.buffer.mutate_in_place(|data| {
+            sort_by_combining_class(&mut data[*ready..]);
+            *ready = data.len();
+        });
     }
 
     #[inline]
@@ -83,7 +91,7 @@ impl<I> Decompositions<I> {
             None
         } else {
             self.ready -= 1;
-            Some(self.buffer.remove(0).1)
+            Some(self.buffer.pop_front().unwrap().1)
         }
     }
 }
@@ -93,7 +101,7 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
 
     #[inline]
     fn next(&mut self) -> Option<char> {
-        while self.ready == 0 && !self.done {
+        while self.ready == 0 {
             match (self.iter.next(), &self.kind) {
                 (Some(ch), &DecompositionType::Canonical) => {
                     super::char::decompose_canonical(ch, |d| self.push_back(d));
@@ -103,10 +111,11 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
                 },
                 (None, _) => {
                     self.sort_pending();
-                    self.done = true;
+                    break;
                 },
             }
         }
+
         self.pop_front()
     }
 

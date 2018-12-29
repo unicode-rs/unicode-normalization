@@ -64,6 +64,7 @@ mod recompose;
 mod quick_check;
 mod stream_safe;
 mod tables;
+mod buffer;
 
 #[cfg(test)]
 mod test;
