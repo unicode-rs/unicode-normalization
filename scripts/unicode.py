@@ -315,14 +315,19 @@ def gen_decomposition_tables(canon_decomp, compat_decomp, out):
     for table, name in tables:
         out.write("#[inline]\n")
         out.write("pub fn %s_fully_decomposed(c: char) -> Option<&'static [char]> {\n" % name)
-        out.write("    match c {\n")
+        # The "Some" constructor is around the match statement here, because
+        # putting it into the individual arms would make the item_bodies
+        # checking of rustc takes almost twice as long, and it's already pretty
+        # slow because of the huge number of match arms and the fact that there
+        # is a borrow inside each arm
+        out.write("    Some(match c {\n")
 
         for char, chars in sorted(table.items()):
             d = ", ".join("'\u{%s}'" % hexify(c) for c in chars)
-            out.write("        '\u{%s}' => Some(&[%s]),\n" % (hexify(char), d))
+            out.write("        '\u{%s}' => &[%s],\n" % (hexify(char), d))
 
-        out.write("        _ => None,\n")
-        out.write("    }\n")
+        out.write("        _ => return None,\n")
+        out.write("    })\n")
         out.write("}\n")
         out.write("\n")
 
