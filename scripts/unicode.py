@@ -347,10 +347,22 @@ def gen_nfc_qc(prop_tables, out):
     gen_qc_match(prop_tables['NFC_QC'], out)
     out.write("}\n")
 
+def gen_nfkc_qc(prop_tables, out):
+    out.write("#[inline]\n")
+    out.write("pub fn qc_nfkc(c: char) -> IsNormalized {\n")
+    gen_qc_match(prop_tables['NFKC_QC'], out)
+    out.write("}\n")
+
 def gen_nfd_qc(prop_tables, out):
     out.write("#[inline]\n")
     out.write("pub fn qc_nfd(c: char) -> IsNormalized {\n")
     gen_qc_match(prop_tables['NFD_QC'], out)
+    out.write("}\n")
+
+def gen_nfkd_qc(prop_tables, out):
+    out.write("#[inline]\n")
+    out.write("pub fn qc_nfkd(c: char) -> IsNormalized {\n")
+    gen_qc_match(prop_tables['NFKD_QC'], out)
     out.write("}\n")
 
 def gen_combining_mark(general_category_mark, out):
@@ -441,7 +453,13 @@ if __name__ == '__main__':
         gen_nfc_qc(data.norm_props, out)
         out.write("\n")
 
+        gen_nfkc_qc(data.norm_props, out)
+        out.write("\n")
+
         gen_nfd_qc(data.norm_props, out)
+        out.write("\n")
+
+        gen_nfkd_qc(data.norm_props, out)
         out.write("\n")
 
         gen_stream_safe(data.ss_leading, data.ss_trailing, out)
