@@ -7,12 +7,14 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
+use smallvec::SmallVec;
 use std::fmt::{self, Write};
+use std::ops::Range;
 
 #[derive(Clone)]
 enum DecompositionType {
     Canonical,
-    Compatible
+    Compatible,
 }
 
 /// External iterator for a string decomposition's characters.
@@ -20,17 +22,17 @@ enum DecompositionType {
 pub struct Decompositions<I> {
     kind: DecompositionType,
     iter: I,
-    done: bool,
 
     // This buffer stores pairs of (canonical combining class, character),
     // pushed onto the end in text order.
     //
-    // It's split into two contiguous regions by the `ready` offset.  The first
-    // `ready` pairs are sorted and ready to emit on demand.  The "pending"
-    // suffix afterwards still needs more characters for us to be able to sort
-    // in canonical order and is not safe to emit.
-    buffer: Vec<(u8, char)>,
-    ready: usize,
+    // It's divided into up to three sections:
+    // 1) A prefix that is free space;
+    // 2) "Ready" characters which are sorted and ready to emit on demand;
+    // 3) A "pending" block which stills needs more characters for us to be able
+    //    to sort in canonical order and is not safe to emit.
+    buffer: SmallVec<[(u8, char); 4]>,
+    ready: Range<usize>,
 }
 
 #[inline]
@@ -38,9 +40,8 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
         iter: iter,
-        done: false,
-        buffer: Vec::new(),
-        ready: 0,
+        buffer: SmallVec::new(),
+        ready: 0..0,
     }
 }
 
@@ -49,9 +50,8 @@ pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
         iter: iter,
-        done: false,
-        buffer: Vec::new(),
-        ready: 0,
+        buffer: SmallVec::new(),
+        ready: 0..0,
     }
 }
 
@@ -59,31 +59,41 @@ impl<I> Decompositions<I> {
     #[inline]
     fn push_back(&mut self, ch: char) {
         let class = super::char::canonical_combining_class(ch);
+
         if class == 0 {
             self.sort_pending();
         }
+
         self.buffer.push((class, ch));
     }
 
     #[inline]
     fn sort_pending(&mut self) {
-        if self.ready == 0 && self.buffer.is_empty() {
-            return;
-        }
-
         // NB: `sort_by_key` is stable, so it will preserve the original text's
         // order within a combining class.
-        self.buffer[self.ready..].sort_by_key(|k| k.0);
-        self.ready = self.buffer.len();
+        self.buffer[self.ready.end..].sort_by_key(|k| k.0);
+        self.ready.end = self.buffer.len();
     }
 
     #[inline]
-    fn pop_front(&mut self) -> Option<char> {
-        if self.ready == 0 {
-            None
+    fn reset_buffer(&mut self) {
+        // Equivalent to `self.buffer.drain(0..self.ready.end)` (if SmallVec
+        // supported this API)
+        let pending = self.buffer.len() - self.ready.end;
+        for i in 0..pending {
+            self.buffer[i] = self.buffer[i + self.ready.end];
+        }
+        self.buffer.truncate(pending);
+        self.ready = 0..0;
+    }
+
+    #[inline]
+    fn increment_next_ready(&mut self) {
+        let next = self.ready.start + 1;
+        if next == self.ready.end {
+            self.reset_buffer();
         } else {
-            self.ready -= 1;
-            Some(self.buffer.remove(0).1)
+            self.ready.start = next;
         }
     }
 }
@@ -93,21 +103,28 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
 
     #[inline]
     fn next(&mut self) -> Option<char> {
-        while self.ready == 0 && !self.done {
+        while self.ready.end == 0 {
             match (self.iter.next(), &self.kind) {
                 (Some(ch), &DecompositionType::Canonical) => {
                     super::char::decompose_canonical(ch, |d| self.push_back(d));
-                },
+                }
                 (Some(ch), &DecompositionType::Compatible) => {
                     super::char::decompose_compatible(ch, |d| self.push_back(d));
-                },
+                }
                 (None, _) => {
-                    self.sort_pending();
-                    self.done = true;
-                },
+                    if self.buffer.is_empty() {
+                        return None;
+                    } else {
+                        self.sort_pending();
+                        break;
+                    }
+                }
             }
         }
-        self.pop_front()
+
+        let (_, ch) = self.buffer[self.ready.start];
+        self.increment_next_ready();
+        Some(ch)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
