@@ -18,4 +18,4 @@ Decomposition and Recomposition, as described in
 Unicode Standard Annex #15.
 """
 
-exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt" ]
+exclude = [ "target/*", "Cargo.lock", "scripts/*", "*.txt" ]
