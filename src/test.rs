@@ -166,9 +166,19 @@ fn test_quick_check() {
     for test in NORMALIZATION_TESTS {
         assert!(quick_check::is_nfc(test.nfc));
         assert!(quick_check::is_nfd(test.nfd));
+        assert!(quick_check::is_nfkc(test.nfkc));
+        assert!(quick_check::is_nfkd(test.nfkd));
         if test.nfc != test.nfd {
             assert!(!quick_check::is_nfc(test.nfd));
             assert!(!quick_check::is_nfd(test.nfc));
+        }
+        if test.nfkc != test.nfc {
+            assert!(!quick_check::is_nfkc(test.nfc));
+            assert!(quick_check::is_nfc(test.nfkc));
+        }
+        if test.nfkd != test.nfd {
+            assert!(!quick_check::is_nfkd(test.nfd));
+            assert!(quick_check::is_nfd(test.nfkd));
         }
     }
 }
