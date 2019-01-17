@@ -33,31 +33,25 @@ pub struct Decompositions<I> {
     //    to sort in canonical order and is not safe to emit.
     buffer: SmallVec<[(u8, char); 4]>,
     ready: Range<usize>,
-
-    // The only purpose of this field is to prevent us calling `next` on an
-    // exhausted iterator; otherwise it would be redundant.
-    done: bool,
 }
 
 #[inline]
-pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
+pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
         iter: iter,
         buffer: SmallVec::new(),
         ready: 0..0,
-        done: false,
     }
 }
 
 #[inline]
-pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
+pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
         iter: iter,
         buffer: SmallVec::new(),
         ready: 0..0,
-        done: false,
     }
 }
 
@@ -104,14 +98,13 @@ impl<I> Decompositions<I> {
     }
 }
 
-impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
+impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
     type Item = char;
 
     #[inline]
     fn next(&mut self) -> Option<char> {
         while self.ready.end == 0 {
-            let next = if self.done { None } else { self.iter.next() };
-            match (next, &self.kind) {
+            match (self.iter.next(), &self.kind) {
                 (Some(ch), &DecompositionType::Canonical) => {
                     super::char::decompose_canonical(ch, |d| self.push_back(d));
                 }
@@ -123,7 +116,6 @@ impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
                         return None;
                     } else {
                         self.sort_pending();
-                        self.done = true;
                         break;
                     }
                 }
@@ -141,7 +133,7 @@ impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
     }
 }
 
-impl<I: Iterator<Item = char> + Clone> fmt::Display for Decompositions<I> {
+impl<I: Iterator<Item=char> + Clone> fmt::Display for Decompositions<I> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for c in self.clone() {
             f.write_char(c)?;
