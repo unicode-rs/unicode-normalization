@@ -128,6 +128,16 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
             }
         }
 
+        // We can assume here that, if `self.ready.end` is greater than zero,
+        // it's also greater than `self.ready.start`. That's because we only
+        // increment `self.ready.start` inside `increment_next_ready`, and
+        // whenever it reaches equality with `self.ready.end`, we reset both
+        // to zero, maintaining the invariant that:
+        //      self.ready.start < self.ready.end || self.ready.end == self.ready.start == 0
+        //
+        // This less-than-obviously-safe implementation is chosen for performance,
+        // minimizing the number & complexity of branches in `next` in the common
+        // case of buffering then unbuffering a single character with each call.
         let (_, ch) = self.buffer[self.ready.start];
         self.increment_next_ready();
         Some(ch)
