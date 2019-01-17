@@ -9,6 +9,7 @@
 // except according to those terms.
 use smallvec::SmallVec;
 use std::fmt::{self, Write};
+use std::iter::Fuse;
 use std::ops::Range;
 
 #[derive(Clone)]
@@ -21,7 +22,7 @@ enum DecompositionType {
 #[derive(Clone)]
 pub struct Decompositions<I> {
     kind: DecompositionType,
-    iter: I,
+    iter: Fuse<I>,
 
     // This buffer stores pairs of (canonical combining class, character),
     // pushed onto the end in text order.
@@ -39,7 +40,7 @@ pub struct Decompositions<I> {
 pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
-        iter: iter,
+        iter: iter.fuse(),
         buffer: SmallVec::new(),
         ready: 0..0,
     }
@@ -49,7 +50,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
 pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
-        iter: iter,
+        iter: iter.fuse(),
         buffer: SmallVec::new(),
         ready: 0..0,
     }
@@ -116,6 +117,11 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
                         return None;
                     } else {
                         self.sort_pending();
+
+                        // This implementation means that we can call `next`
+                        // on an exhausted iterator; the last outer `next` call
+                        // will result in an inner `next` call. To make this
+                        // safe, we use `fuse`.
                         break;
                     }
                 }
