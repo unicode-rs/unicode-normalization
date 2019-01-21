@@ -19,3 +19,6 @@ Unicode Standard Annex #15.
 """
 
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "src/normalization_tests.rs", "src/test.rs" ]
+
+[dependencies]
+smallvec = "0.6"

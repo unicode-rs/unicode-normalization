@@ -8,15 +8,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::collections::VecDeque;
-use std::fmt::{self, Write};
 use decompose::Decompositions;
+use smallvec::SmallVec;
+use std::fmt::{self, Write};
 
 #[derive(Clone)]
 enum RecompositionState {
     Composing,
-    Purging,
-    Finished
+    Purging(usize),
+    Finished(usize),
 }
 
 /// External iterator for a string recomposition's characters.
@@ -24,9 +24,9 @@ enum RecompositionState {
 pub struct Recompositions<I> {
     iter: Decompositions<I>,
     state: RecompositionState,
-    buffer: VecDeque<char>,
+    buffer: SmallVec<[char; 4]>,
     composee: Option<char>,
-    last_ccc: Option<u8>
+    last_ccc: Option<u8>,
 }
 
 #[inline]
@@ -34,7 +34,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_canonical(iter),
         state: self::RecompositionState::Composing,
-        buffer: VecDeque::new(),
+        buffer: SmallVec::new(),
         composee: None,
         last_ccc: None,
     }
@@ -45,7 +45,7 @@ pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_compatible(iter),
         state: self::RecompositionState::Composing,
-        buffer: VecDeque::new(),
+        buffer: SmallVec::new(),
         composee: None,
         last_ccc: None,
     }
@@ -85,7 +85,7 @@ impl<I: Iterator<Item=char>> Iterator for Recompositions<I> {
                                             self.composee = Some(ch);
                                             return Some(k);
                                         }
-                                        self.buffer.push_back(ch);
+                                        self.buffer.push(ch);
                                         self.last_ccc = Some(ch_class);
                                     }
                                 }
@@ -96,10 +96,10 @@ impl<I: Iterator<Item=char>> Iterator for Recompositions<I> {
                                     if ch_class == 0 {
                                         self.composee = Some(ch);
                                         self.last_ccc = None;
-                                        self.state = Purging;
+                                        self.state = Purging(0);
                                         return Some(k);
                                     }
-                                    self.buffer.push_back(ch);
+                                    self.buffer.push(ch);
                                     self.last_ccc = Some(ch_class);
                                     continue;
                                 }
@@ -109,28 +109,40 @@ impl<I: Iterator<Item=char>> Iterator for Recompositions<I> {
                                         continue;
                                     }
                                     None => {
-                                        self.buffer.push_back(ch);
+                                        self.buffer.push(ch);
                                         self.last_ccc = Some(ch_class);
                                     }
                                 }
                             }
                         }
                     }
-                    self.state = Finished;
+                    self.state = Finished(0);
                     if self.composee.is_some() {
                         return self.composee.take();
                     }
                 }
-                Purging => {
-                    match self.buffer.pop_front() {
-                        None => self.state = Composing,
-                        s => return s
+                Purging(next) => {
+                    match self.buffer.get(next).cloned() {
+                        None => {
+                            self.buffer.clear();
+                            self.state = Composing;
+                        }
+                        s => {
+                            self.state = Purging(next + 1);
+                            return s
+                        }
                     }
                 }
-                Finished => {
-                    match self.buffer.pop_front() {
-                        None => return self.composee.take(),
-                        s => return s
+                Finished(next) => {
+                    match self.buffer.get(next).cloned() {
+                        None => {
+                            self.buffer.clear();
+                            return self.composee.take()
+                        }
+                        s => {
+                            self.state = Finished(next + 1);
+                            return s
+                        }
                     }
                 }
             }
