@@ -315,14 +315,19 @@ def gen_decomposition_tables(canon_decomp, compat_decomp, out):
     for table, name in tables:
         out.write("#[inline]\n")
         out.write("pub fn %s_fully_decomposed(c: char) -> Option<&'static [char]> {\n" % name)
-        out.write("    match c {\n")
+        # The "Some" constructor is around the match statement here, because
+        # putting it into the individual arms would make the item_bodies
+        # checking of rustc takes almost twice as long, and it's already pretty
+        # slow because of the huge number of match arms and the fact that there
+        # is a borrow inside each arm
+        out.write("    Some(match c {\n")
 
         for char, chars in sorted(table.items()):
             d = ", ".join("'\u{%s}'" % hexify(c) for c in chars)
-            out.write("        '\u{%s}' => Some(&[%s]),\n" % (hexify(char), d))
+            out.write("        '\u{%s}' => &[%s],\n" % (hexify(char), d))
 
-        out.write("        _ => None,\n")
-        out.write("    }\n")
+        out.write("        _ => return None,\n")
+        out.write("    })\n")
         out.write("}\n")
         out.write("\n")
 
@@ -347,10 +352,22 @@ def gen_nfc_qc(prop_tables, out):
     gen_qc_match(prop_tables['NFC_QC'], out)
     out.write("}\n")
 
+def gen_nfkc_qc(prop_tables, out):
+    out.write("#[inline]\n")
+    out.write("pub fn qc_nfkc(c: char) -> IsNormalized {\n")
+    gen_qc_match(prop_tables['NFKC_QC'], out)
+    out.write("}\n")
+
 def gen_nfd_qc(prop_tables, out):
     out.write("#[inline]\n")
     out.write("pub fn qc_nfd(c: char) -> IsNormalized {\n")
     gen_qc_match(prop_tables['NFD_QC'], out)
+    out.write("}\n")
+
+def gen_nfkd_qc(prop_tables, out):
+    out.write("#[inline]\n")
+    out.write("pub fn qc_nfkd(c: char) -> IsNormalized {\n")
+    gen_qc_match(prop_tables['NFKD_QC'], out)
     out.write("}\n")
 
 def gen_combining_mark(general_category_mark, out):
@@ -441,7 +458,13 @@ if __name__ == '__main__':
         gen_nfc_qc(data.norm_props, out)
         out.write("\n")
 
+        gen_nfkc_qc(data.norm_props, out)
+        out.write("\n")
+
         gen_nfd_qc(data.norm_props, out)
+        out.write("\n")
+
+        gen_nfkd_qc(data.norm_props, out)
         out.write("\n")
 
         gen_stream_safe(data.ss_leading, data.ss_trailing, out)
