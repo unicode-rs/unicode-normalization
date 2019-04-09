@@ -288,14 +288,18 @@ hexify = lambda c: '{:04X}'.format(c)
 
 def gen_combining_class(combining_classes, out):
     out.write("#[inline]\n")
+    (salt, keys) = minimal_perfect_hash(combining_classes)
     out.write("pub fn canonical_combining_class(c: char) -> u8 {\n")
-    out.write("    match c {\n")
-
-    for char, combining_class in sorted(combining_classes.items()):
-        out.write("        '\\u{%s}' => %s,\n" % (hexify(char), combining_class))
-
-    out.write("        _ => 0,\n")
-    out.write("    }\n")
+    out.write("    mph_lookup(c.into(), &[\n")
+    for s in salt:
+        out.write("        0x{:x},\n".format(s))
+    out.write("    ],\n")
+    out.write("    &[\n")
+    for k in keys:
+        kv = int(combining_classes[k]) | (k << 8)
+        out.write("        0x{:x},\n".format(kv))
+    out.write("    ],\n")
+    out.write("    u8_lookup_fk, u8_lookup_fv, 0) as u8\n")
     out.write("}\n")
 
 def gen_composition_table(canon_comp, out):
@@ -432,12 +436,60 @@ pub struct NormalizationTest {
 
     out.write("];\n")
 
+def my_hash(x, salt, n):
+    # This is hash based on the theory that multiplication is efficient
+    mask_32 = 0xffffffff
+    y = ((x + salt) * 2654435769) & mask_32
+    y ^= (x * 0x31415926) & mask_32
+    return (y * n) >> 32
+
+# Compute minimal perfect hash function, d can be either a dict or list of keys.
+def minimal_perfect_hash(d, singleton_buckets = False):
+    n = len(d)
+    buckets = dict((h, []) for h in range(n))
+    for key in d:
+        h = my_hash(key, 0, n)
+        buckets[h].append(key)
+    bsorted = [(len(buckets[h]), h) for h in range(n)]
+    bsorted.sort(reverse = True)
+    claimed = [False] * n
+    salts = [0] * n
+    keys = [0] * n
+    for (bucket_size, h) in bsorted:
+        if bucket_size == 0:
+            break
+        elif singleton_buckets and bucket_size == 1:
+            for i in range(n):
+                if not claimed[i]:
+                    salts[h] = -(i + 1)
+                    claimed[i] = True
+                    keys[i] = buckets[h][0]
+                    break
+        else:
+            for salt in range(1, 32768):
+                rehashes = [my_hash(key, salt, n) for key in buckets[h]]
+                if all(not claimed[hash] for hash in rehashes):
+                    if len(set(rehashes)) < bucket_size:
+                        continue
+                    salts[h] = salt
+                    for key in buckets[h]:
+                        rehash = my_hash(key, salt, n)
+                        claimed[rehash] = True
+                        keys[rehash] = key
+                    break
+            if salts[h] == 0:
+                print("minimal perfect hashing failed")
+                exit(1)
+    return (salts, keys)
+
 if __name__ == '__main__':
     data = UnicodeData()
     with open("tables.rs", "w", newline = "\n") as out:
         out.write(PREAMBLE)
         out.write("use quick_check::IsNormalized;\n")
         out.write("use quick_check::IsNormalized::*;\n")
+        out.write("\n")
+        out.write("use perfect_hash::*;\n")
         out.write("\n")
 
         version = "(%s, %s, %s)" % tuple(UNICODE_VERSION.split("."))

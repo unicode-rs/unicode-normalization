@@ -66,6 +66,7 @@ use std::str::Chars;
 
 mod decompose;
 mod normalize;
+mod perfect_hash;
 mod recompose;
 mod quick_check;
 mod stream_safe;
