@@ -18,7 +18,7 @@
 # Since this should not require frequent updates, we just store this
 # out-of-line and check the unicode.rs file into git.
 import collections
-import requests
+import urllib.request
 
 UNICODE_VERSION = "9.0.0"
 UCD_URL = "https://www.unicode.org/Public/%s/ucd/" % UNICODE_VERSION
@@ -68,9 +68,9 @@ class UnicodeData(object):
 
         def stats(name, table):
             count = sum(len(v) for v in table.values())
-            print "%s: %d chars => %d decomposed chars" % (name, len(table), count)
+            print("%s: %d chars => %d decomposed chars" % (name, len(table), count))
 
-        print "Decomposition table stats:"
+        print("Decomposition table stats:")
         stats("Canonical decomp", self.canon_decomp)
         stats("Compatible decomp", self.compat_decomp)
         stats("Canonical fully decomp", self.canon_fully_decomp)
@@ -79,8 +79,8 @@ class UnicodeData(object):
         self.ss_leading, self.ss_trailing = self._compute_stream_safe_tables()
 
     def _fetch(self, filename):
-        resp = requests.get(UCD_URL + filename)
-        return resp.text
+        resp = urllib.request.urlopen(UCD_URL + filename)
+        return resp.read().decode('utf-8')
 
     def _load_unicode_data(self):
         self.combining_classes = {}
@@ -234,7 +234,7 @@ class UnicodeData(object):
         # need to store their overlap when they agree.  When they don't agree,
         # store the decomposition in the compatibility table since we'll check
         # that first when normalizing to NFKD.
-        assert canon_fully_decomp <= compat_fully_decomp
+        assert set(canon_fully_decomp) <= set(compat_fully_decomp)
 
         for ch in set(canon_fully_decomp) & set(compat_fully_decomp):
             if canon_fully_decomp[ch] == compat_fully_decomp[ch]:
@@ -284,7 +284,7 @@ class UnicodeData(object):
 
         return leading_nonstarters, trailing_nonstarters
 
-hexify = lambda c: hex(c)[2:].upper().rjust(4, '0')
+hexify = lambda c: '{:04X}'.format(c)
 
 def gen_combining_class(combining_classes, out):
     out.write("#[inline]\n")
@@ -292,7 +292,7 @@ def gen_combining_class(combining_classes, out):
     out.write("    match c {\n")
 
     for char, combining_class in sorted(combining_classes.items()):
-        out.write("        '\u{%s}' => %s,\n" % (hexify(char), combining_class))
+        out.write("        '\\u{%s}' => %s,\n" % (hexify(char), combining_class))
 
     out.write("        _ => 0,\n")
     out.write("    }\n")
@@ -304,7 +304,7 @@ def gen_composition_table(canon_comp, out):
     out.write("    match (c1, c2) {\n")
 
     for (c1, c2), c3 in sorted(canon_comp.items()):
-        out.write("        ('\u{%s}', '\u{%s}') => Some('\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
+        out.write("        ('\\u{%s}', '\\u{%s}') => Some('\\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
 
     out.write("        _ => None,\n")
     out.write("    }\n")
@@ -323,8 +323,8 @@ def gen_decomposition_tables(canon_decomp, compat_decomp, out):
         out.write("    Some(match c {\n")
 
         for char, chars in sorted(table.items()):
-            d = ", ".join("'\u{%s}'" % hexify(c) for c in chars)
-            out.write("        '\u{%s}' => &[%s],\n" % (hexify(char), d))
+            d = ", ".join("'\\u{%s}'" % hexify(c) for c in chars)
+            out.write("        '\\u{%s}' => &[%s],\n" % (hexify(char), d))
 
         out.write("        _ => return None,\n")
         out.write("    })\n")
@@ -375,8 +375,8 @@ def gen_combining_mark(general_category_mark, out):
     out.write("pub fn is_combining_mark(c: char) -> bool {\n")
     out.write("    match c {\n")
 
-    for char in general_category_mark:
-        out.write("        '\u{%s}' => true,\n" % hexify(char))
+    for char in sorted(general_category_mark):
+        out.write("        '\\u{%s}' => true,\n" % hexify(char))
 
     out.write("        _ => false,\n")
     out.write("    }\n")
@@ -387,8 +387,8 @@ def gen_stream_safe(leading, trailing, out):
     out.write("pub fn stream_safe_leading_nonstarters(c: char) -> usize {\n")
     out.write("    match c {\n")
 
-    for char, num_leading in leading.items():
-        out.write("        '\u{%s}' => %d,\n" % (hexify(char), num_leading))
+    for char, num_leading in sorted(leading.items()):
+        out.write("        '\\u{%s}' => %d,\n" % (hexify(char), num_leading))
 
     out.write("        _ => 0,\n")
     out.write("    }\n")
@@ -399,8 +399,8 @@ def gen_stream_safe(leading, trailing, out):
     out.write("pub fn stream_safe_trailing_nonstarters(c: char) -> usize {\n")
     out.write("    match c {\n")
 
-    for char, num_trailing in trailing.items():
-        out.write("        '\u{%s}' => %d,\n" % (hexify(char), num_trailing))
+    for char, num_trailing in sorted(trailing.items()):
+        out.write("        '\\u{%s}' => %d,\n" % (hexify(char), num_trailing))
 
     out.write("        _ => 0,\n")
     out.write("    }\n")
@@ -419,7 +419,7 @@ pub struct NormalizationTest {
 """)
 
     out.write("pub const NORMALIZATION_TESTS: &[NormalizationTest] = &[\n")
-    str_literal = lambda s: '"%s"' % "".join("\u{%s}" % c for c in s)
+    str_literal = lambda s: '"%s"' % "".join("\\u{%s}" % c for c in s)
 
     for test in tests:
         out.write("    NormalizationTest {\n")
@@ -434,7 +434,7 @@ pub struct NormalizationTest {
 
 if __name__ == '__main__':
     data = UnicodeData()
-    with open("tables.rs", "w") as out:
+    with open("tables.rs", "w", newline = "\n") as out:
         out.write(PREAMBLE)
         out.write("use quick_check::IsNormalized;\n")
         out.write("use quick_check::IsNormalized::*;\n")
@@ -470,6 +470,6 @@ if __name__ == '__main__':
         gen_stream_safe(data.ss_leading, data.ss_trailing, out)
         out.write("\n")
 
-    with open("normalization_tests.rs", "w") as out:
+    with open("normalization_tests.rs", "w", newline = "\n") as out:
         out.write(PREAMBLE)
         gen_tests(data.norm_tests, out)
