@@ -287,7 +287,6 @@ class UnicodeData(object):
 hexify = lambda c: '{:04X}'.format(c)
 
 def gen_combining_class(combining_classes, out):
-    out.write("#[inline]\n")
     (salt, keys) = minimal_perfect_hash(combining_classes)
     out.write("pub fn canonical_combining_class(c: char) -> u8 {\n")
     out.write("    mph_lookup(c.into(), &[\n")
@@ -299,7 +298,7 @@ def gen_combining_class(combining_classes, out):
         kv = int(combining_classes[k]) | (k << 8)
         out.write("        0x{:x},\n".format(kv))
     out.write("    ],\n")
-    out.write("    u8_lookup_fk, u8_lookup_fv, 0) as u8\n")
+    out.write("    u8_lookup_fk, u8_lookup_fv, 0)\n")
     out.write("}\n")
 
 def gen_composition_table(canon_comp, out):
@@ -376,15 +375,19 @@ def gen_nfkd_qc(prop_tables, out):
 
 def gen_combining_mark(general_category_mark, out):
     out.write("#[inline]\n")
+    (salt, keys) = minimal_perfect_hash(general_category_mark)
     out.write("pub fn is_combining_mark(c: char) -> bool {\n")
-    out.write("    match c {\n")
-
-    for char in sorted(general_category_mark):
-        out.write("        '\\u{%s}' => true,\n" % hexify(char))
-
-    out.write("        _ => false,\n")
-    out.write("    }\n")
+    out.write("    mph_lookup(c.into(), &[\n")
+    for s in salt:
+        out.write("        0x{:x},\n".format(s))
+    out.write("    ],\n")
+    out.write("    &[\n")
+    for k in keys:
+        out.write("        0x{:x},\n".format(k))
+    out.write("    ],\n")
+    out.write("    bool_lookup_fk, bool_lookup_fv, false)\n")
     out.write("}\n")
+
 
 def gen_stream_safe(leading, trailing, out):
     out.write("#[inline]\n")
@@ -399,15 +402,18 @@ def gen_stream_safe(leading, trailing, out):
     out.write("}\n")
     out.write("\n")
 
-    out.write("#[inline]\n")
+    (salt, keys) = minimal_perfect_hash(trailing)
     out.write("pub fn stream_safe_trailing_nonstarters(c: char) -> usize {\n")
-    out.write("    match c {\n")
-
-    for char, num_trailing in sorted(trailing.items()):
-        out.write("        '\\u{%s}' => %d,\n" % (hexify(char), num_trailing))
-
-    out.write("        _ => 0,\n")
-    out.write("    }\n")
+    out.write("    mph_lookup(c.into(), &[\n")
+    for s in salt:
+        out.write("        0x{:x},\n".format(s))
+    out.write("    ],\n")
+    out.write("    &[\n")
+    for k in keys:
+        kv = int(trailing[k]) | (k << 8)
+        out.write("        0x{:x},\n".format(kv))
+    out.write("    ],\n")
+    out.write("    u8_lookup_fk, u8_lookup_fv, 0) as usize\n")
     out.write("}\n")
 
 def gen_tests(tests, out):

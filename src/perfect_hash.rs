@@ -12,6 +12,7 @@
 
 // This function is based on multiplication being fast and is "good enough". Also
 // it can share some work between the unsalted and salted versions.
+#[inline]
 fn my_hash(key: u32, salt: u32, n: usize) -> usize {
     let y = key.wrapping_add(salt).wrapping_mul(2654435769);
     let y = y ^ key.wrapping_mul(0x31415926);
@@ -33,11 +34,25 @@ pub(crate) fn mph_lookup<KV, V, FK, FV>(x: u32, salt: &[u16], kv: &[KV], fk: FK,
 }
 
 /// Extract the key in a 24 bit key and 8 bit value packed in a u32.
+#[inline]
 pub(crate) fn u8_lookup_fk(kv: u32) -> u32 {
     kv >> 8
 }
 
 /// Extract the value in a 24 bit key and 8 bit value packed in a u32.
-pub(crate) fn u8_lookup_fv(kv: u32) -> u32 {
-    kv & 0xff
+#[inline]
+pub(crate) fn u8_lookup_fv(kv: u32) -> u8 {
+    (kv & 0xff) as u8
+}
+
+/// Extract the key for a boolean lookup.
+#[inline]
+pub(crate) fn bool_lookup_fk(kv: u32) -> u32 {
+    kv
+}
+
+/// Extract the value for a boolean lookup.
+#[inline]
+pub(crate) fn bool_lookup_fv(_kv: u32) -> bool {
+    true
 }
