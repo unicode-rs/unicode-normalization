@@ -56,3 +56,16 @@ pub(crate) fn bool_lookup_fk(kv: u32) -> u32 {
 pub(crate) fn bool_lookup_fv(_kv: u32) -> bool {
     true
 }
+
+/// Extract the key in a pair.
+#[inline]
+pub(crate) fn pair_lookup_fk<T>(kv: (u32, T)) -> u32 {
+    kv.0
+}
+
+/// Extract the value in a pair, returning an option.
+#[inline]
+pub(crate) fn pair_lookup_fv_opt<T>(kv: (u32, T)) -> Option<T> {
+    Some(kv.1)
+}
+

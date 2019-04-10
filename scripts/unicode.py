@@ -316,23 +316,20 @@ def gen_composition_table(canon_comp, out):
 def gen_decomposition_tables(canon_decomp, compat_decomp, out):
     tables = [(canon_decomp, 'canonical'), (compat_decomp, 'compatibility')]
     for table, name in tables:
-        out.write("#[inline]\n")
+        (salt, keys) = minimal_perfect_hash(table)
+        out.write("const {}_DECOMPOSED_KV: &[(u32, &'static [char])] = &[\n".format(name.upper()))
+        for char in keys:
+            d = ", ".join("'\\u{%s}'" % hexify(c) for c in table[char])
+            out.write("    (0x{:x}, &[{}]),\n".format(char, d))
+        out.write("];\n")
         out.write("pub fn %s_fully_decomposed(c: char) -> Option<&'static [char]> {\n" % name)
-        # The "Some" constructor is around the match statement here, because
-        # putting it into the individual arms would make the item_bodies
-        # checking of rustc takes almost twice as long, and it's already pretty
-        # slow because of the huge number of match arms and the fact that there
-        # is a borrow inside each arm
-        out.write("    Some(match c {\n")
-
-        for char, chars in sorted(table.items()):
-            d = ", ".join("'\\u{%s}'" % hexify(c) for c in chars)
-            out.write("        '\\u{%s}' => &[%s],\n" % (hexify(char), d))
-
-        out.write("        _ => return None,\n")
-        out.write("    })\n")
+        out.write("    mph_lookup(c.into(), &[\n")
+        for s in salt:
+            out.write("        0x{:x},\n".format(s))
+        out.write("    ],\n")
+        out.write("    {}_DECOMPOSED_KV,\n".format(name.upper()))
+        out.write("    pair_lookup_fk, pair_lookup_fv_opt, None)\n")
         out.write("}\n")
-        out.write("\n")
 
 def gen_qc_match(prop_table, out):
     out.write("    match c {\n")
@@ -374,7 +371,6 @@ def gen_nfkd_qc(prop_tables, out):
     out.write("}\n")
 
 def gen_combining_mark(general_category_mark, out):
-    out.write("#[inline]\n")
     (salt, keys) = minimal_perfect_hash(general_category_mark)
     out.write("pub fn is_combining_mark(c: char) -> bool {\n")
     out.write("    mph_lookup(c.into(), &[\n")
@@ -388,8 +384,8 @@ def gen_combining_mark(general_category_mark, out):
     out.write("    bool_lookup_fk, bool_lookup_fv, false)\n")
     out.write("}\n")
 
-
 def gen_stream_safe(leading, trailing, out):
+    # This could be done as a hash but the table is very small.
     out.write("#[inline]\n")
     out.write("pub fn stream_safe_leading_nonstarters(c: char) -> usize {\n")
     out.write("    match c {\n")
