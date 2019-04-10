@@ -19,6 +19,13 @@ fn my_hash(key: u32, salt: u32, n: usize) -> usize {
     (((y as u64) * (n as u64)) >> 32) as usize
 }
 
+/// Do a lookup using minimal perfect hashing.
+/// 
+/// The table is stored as a sequence of "salt" values, then a sequence of
+/// values that contain packed key/value pairs. The strategy is to hash twice.
+/// The first hash retrieves a salt value that makes the second hash unique.
+/// The hash function doesn't have to be very good, just good enough that the
+/// resulting map is unique.
 #[inline]
 pub(crate) fn mph_lookup<KV, V, FK, FV>(x: u32, salt: &[u16], kv: &[KV], fk: FK, fv: FV,
     default: V) -> V

@@ -302,14 +302,31 @@ def gen_combining_class(combining_classes, out):
     out.write("}\n")
 
 def gen_composition_table(canon_comp, out):
-    out.write("#[inline]\n")
+    table = {}
+    for (c1, c2), c3 in canon_comp.items():
+        if c1 < 0x10000 and c2 < 0x10000:
+            table[(c1 << 16) | c2] = c3
+    (salt, keys) = minimal_perfect_hash(table)
     out.write("pub fn composition_table(c1: char, c2: char) -> Option<char> {\n")
-    out.write("    match (c1, c2) {\n")
+    out.write("    if c1 < '\\u{10000}' && c2 < '\\u{10000}' {\n")
+    out.write("        mph_lookup((c1 as u32) << 16 | (c2 as u32), &[\n")
+    for s in salt:
+        out.write("            0x{:x},\n".format(s))
+    out.write("        ],\n")
+    out.write("        &[\n")
+    for k in keys:
+        out.write("            (0x%s, '\\u{%s}'),\n" % (hexify(k), hexify(table[k])))
+    out.write("        ],\n")
+    out.write("        pair_lookup_fk, pair_lookup_fv_opt, None)\n")
+    out.write("    } else {\n")
+    out.write("        match (c1, c2) {\n")
 
     for (c1, c2), c3 in sorted(canon_comp.items()):
-        out.write("        ('\\u{%s}', '\\u{%s}') => Some('\\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
+        if c1 >= 0x10000 and c2 >= 0x10000:
+            out.write("            ('\\u{%s}', '\\u{%s}') => Some('\\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
 
-    out.write("        _ => None,\n")
+    out.write("            _ => None,\n")
+    out.write("        }\n")
     out.write("    }\n")
     out.write("}\n")
 
