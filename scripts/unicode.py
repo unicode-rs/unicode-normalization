@@ -413,6 +413,7 @@ pub struct NormalizationTest {
 
     out.write("];\n")
 
+# Guaranteed to be less than n.
 def my_hash(x, salt, n):
     # This is hash based on the theory that multiplication is efficient
     mask_32 = 0xffffffff
