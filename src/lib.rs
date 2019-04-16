@@ -65,6 +65,7 @@ pub use stream_safe::StreamSafe;
 use std::str::Chars;
 
 mod decompose;
+mod lookups;
 mod normalize;
 mod perfect_hash;
 mod recompose;
@@ -81,7 +82,7 @@ mod normalization_tests;
 pub mod char {
     pub use normalize::{decompose_canonical, decompose_compatible, compose};
 
-    pub use perfect_hash::{canonical_combining_class, is_combining_mark};
+    pub use lookups::{canonical_combining_class, is_combining_mark};
 }
 
 

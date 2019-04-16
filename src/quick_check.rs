@@ -1,5 +1,5 @@
 use UnicodeNormalization;
-use perfect_hash::canonical_combining_class;
+use lookups::canonical_combining_class;
 use stream_safe;
 use tables;
 

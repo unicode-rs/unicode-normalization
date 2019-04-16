@@ -11,7 +11,7 @@
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
 use std::char;
 use std::ops::FnMut;
-use perfect_hash::{canonical_fully_decomposed, composition_table, compatibility_fully_decomposed};
+use lookups::{canonical_fully_decomposed, composition_table, compatibility_fully_decomposed};
 
 /// Compute canonical Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)

@@ -2,7 +2,7 @@ use normalize::{
     hangul_decomposition_length,
     is_hangul_syllable,
 };
-use perfect_hash::{
+use lookups::{
     canonical_combining_class, canonical_fully_decomposed, compatibility_fully_decomposed,
     stream_safe_trailing_nonstarters,
 };
@@ -113,7 +113,7 @@ mod tests {
     use std::char;
     use normalization_tests::NORMALIZATION_TESTS;
     use normalize::decompose_compatible;
-    use perfect_hash::canonical_combining_class;
+    use lookups::canonical_combining_class;
 
     fn stream_safe(s: &str) -> String {
         StreamSafe::new(s.chars()).collect()
