@@ -11,14 +11,14 @@
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
 use std::char;
 use std::ops::FnMut;
-use tables;
+use perfect_hash::{canonical_fully_decomposed, composition_table, compatibility_fully_decomposed};
 
 /// Compute canonical Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
 #[inline]
 pub fn decompose_canonical<F>(c: char, emit_char: F) where F: FnMut(char) {
-    decompose(c, tables::canonical_fully_decomposed, emit_char)
+    decompose(c, canonical_fully_decomposed, emit_char)
 }
 
 /// Compute canonical or compatible Unicode decomposition for character.
@@ -26,8 +26,8 @@ pub fn decompose_canonical<F>(c: char, emit_char: F) where F: FnMut(char) {
 /// for more information.
 #[inline]
 pub fn decompose_compatible<F: FnMut(char)>(c: char, emit_char: F) {
-    let decompose_char = |c| tables::compatibility_fully_decomposed(c)
-        .or_else(|| tables::canonical_fully_decomposed(c));
+    let decompose_char = |c| compatibility_fully_decomposed(c)
+        .or_else(|| canonical_fully_decomposed(c));
     decompose(c, decompose_char, emit_char)
 }
 
@@ -62,7 +62,7 @@ fn decompose<D, F>(c: char, decompose_char: D, mut emit_char: F)
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
 /// for more information.
 pub fn compose(a: char, b: char) -> Option<char> {
-    compose_hangul(a, b).or_else(|| tables::composition_table(a, b))
+    compose_hangul(a, b).or_else(|| composition_table(a, b))
 }
 
 // Constants from Unicode 9.0.0 Section 3.12 Conjoining Jamo Behavior

@@ -2,7 +2,11 @@ use normalize::{
     hangul_decomposition_length,
     is_hangul_syllable,
 };
-use tables;
+use perfect_hash::{
+    canonical_combining_class, canonical_fully_decomposed, compatibility_fully_decomposed,
+    stream_safe_trailing_nonstarters,
+};
+use tables::stream_safe_leading_nonstarters;
 
 pub(crate) const MAX_NONSTARTERS: usize = 30;
 const COMBINING_GRAPHEME_JOINER: char = '\u{034F}';
@@ -78,18 +82,18 @@ pub(crate) fn classify_nonstarters(c: char) -> Decomposition {
             decomposition_len: hangul_decomposition_length(c),
         };
     }
-    let decomp = tables::compatibility_fully_decomposed(c)
-        .or_else(|| tables::canonical_fully_decomposed(c));
+    let decomp = compatibility_fully_decomposed(c)
+        .or_else(|| canonical_fully_decomposed(c));
     match decomp {
         Some(decomp) => {
             Decomposition {
-                leading_nonstarters: tables::stream_safe_leading_nonstarters(c),
-                trailing_nonstarters: tables::stream_safe_trailing_nonstarters(c),
+                leading_nonstarters: stream_safe_leading_nonstarters(c),
+                trailing_nonstarters: stream_safe_trailing_nonstarters(c),
                 decomposition_len: decomp.len(),
             }
         },
         None => {
-            let is_nonstarter = tables::canonical_combining_class(c) != 0;
+            let is_nonstarter = canonical_combining_class(c) != 0;
             let nonstarter = if is_nonstarter { 1 } else { 0 };
             Decomposition {
                 leading_nonstarters: nonstarter,
@@ -109,7 +113,7 @@ mod tests {
     use std::char;
     use normalization_tests::NORMALIZATION_TESTS;
     use normalize::decompose_compatible;
-    use tables;
+    use perfect_hash::canonical_combining_class;
 
     fn stream_safe(s: &str) -> String {
         StreamSafe::new(s.chars()).collect()
@@ -149,12 +153,12 @@ mod tests {
 
             let num_leading = s
                 .iter()
-                .take_while(|&c| tables::canonical_combining_class(*c) != 0)
+                .take_while(|&c| canonical_combining_class(*c) != 0)
                 .count();
             let num_trailing = s
                 .iter()
                 .rev()
-                .take_while(|&c| tables::canonical_combining_class(*c) != 0)
+                .take_while(|&c| canonical_combining_class(*c) != 0)
                 .count();
 
             assert_eq!(num_leading, c.leading_nonstarters);

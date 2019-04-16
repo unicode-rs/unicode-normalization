@@ -81,11 +81,7 @@ mod normalization_tests;
 pub mod char {
     pub use normalize::{decompose_canonical, decompose_compatible, compose};
 
-    /// Look up the canonical combining class of a character.
-    pub use tables::canonical_combining_class;
-
-    /// Return whether the given character is a combining mark (`General_Category=Mark`)
-    pub use tables::is_combining_mark;
+    pub use perfect_hash::{canonical_combining_class, is_combining_mark};
 }
 
 

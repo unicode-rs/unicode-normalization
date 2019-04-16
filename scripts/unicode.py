@@ -286,20 +286,20 @@ class UnicodeData(object):
 
 hexify = lambda c: '{:04X}'.format(c)
 
-def gen_combining_class(combining_classes, out):
-    (salt, keys) = minimal_perfect_hash(combining_classes)
-    out.write("pub fn canonical_combining_class(c: char) -> u8 {\n")
-    out.write("    mph_lookup(c.into(), &[\n")
+def gen_mph_data(name, d, kv_type, kv_callback):
+    (salt, keys) = minimal_perfect_hash(d)
+    out.write("pub(crate) const %s_SALT: &[u16] = &[\n" % name.upper())
     for s in salt:
-        out.write("        0x{:x},\n".format(s))
-    out.write("    ],\n")
-    out.write("    &[\n")
+        out.write("    0x{:x},\n".format(s))
+    out.write("];\n")
+    out.write("pub(crate) const {}_KV: &[{}] = &[\n".format(name.upper(), kv_type))
     for k in keys:
-        kv = int(combining_classes[k]) | (k << 8)
-        out.write("        0x{:x},\n".format(kv))
-    out.write("    ],\n")
-    out.write("    u8_lookup_fk, u8_lookup_fv, 0)\n")
-    out.write("}\n")
+        out.write("    {},\n".format(kv_callback(k)))
+    out.write("];\n\n")
+
+def gen_combining_class(combining_classes, out):
+    gen_mph_data('canonical_combining_class', combining_classes, 'u32',
+        lambda k: "0x{:X}".format(int(combining_classes[k]) | (k << 8)))
 
 def gen_composition_table(canon_comp, out):
     table = {}
@@ -307,46 +307,25 @@ def gen_composition_table(canon_comp, out):
         if c1 < 0x10000 and c2 < 0x10000:
             table[(c1 << 16) | c2] = c3
     (salt, keys) = minimal_perfect_hash(table)
-    out.write("pub fn composition_table(c1: char, c2: char) -> Option<char> {\n")
-    out.write("    if c1 < '\\u{10000}' && c2 < '\\u{10000}' {\n")
-    out.write("        mph_lookup((c1 as u32) << 16 | (c2 as u32), &[\n")
-    for s in salt:
-        out.write("            0x{:x},\n".format(s))
-    out.write("        ],\n")
-    out.write("        &[\n")
-    for k in keys:
-        out.write("            (0x%s, '\\u{%s}'),\n" % (hexify(k), hexify(table[k])))
-    out.write("        ],\n")
-    out.write("        pair_lookup_fk, pair_lookup_fv_opt, None)\n")
-    out.write("    } else {\n")
-    out.write("        match (c1, c2) {\n")
+    gen_mph_data('COMPOSITION_TABLE', table, '(u32, char)',
+        lambda k: "(0x%s, '\\u{%s}')" % (hexify(k), hexify(table[k])))
 
+    out.write("pub(crate) fn composition_table_astral(c1: char, c2: char) -> Option<char> {\n")
+    out.write("    match (c1, c2) {\n")
     for (c1, c2), c3 in sorted(canon_comp.items()):
         if c1 >= 0x10000 and c2 >= 0x10000:
-            out.write("            ('\\u{%s}', '\\u{%s}') => Some('\\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
+            out.write("        ('\\u{%s}', '\\u{%s}') => Some('\\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
 
-    out.write("            _ => None,\n")
-    out.write("        }\n")
+    out.write("        _ => None,\n")
     out.write("    }\n")
     out.write("}\n")
 
 def gen_decomposition_tables(canon_decomp, compat_decomp, out):
     tables = [(canon_decomp, 'canonical'), (compat_decomp, 'compatibility')]
     for table, name in tables:
-        (salt, keys) = minimal_perfect_hash(table)
-        out.write("const {}_DECOMPOSED_KV: &[(u32, &'static [char])] = &[\n".format(name.upper()))
-        for char in keys:
-            d = ", ".join("'\\u{%s}'" % hexify(c) for c in table[char])
-            out.write("    (0x{:x}, &[{}]),\n".format(char, d))
-        out.write("];\n")
-        out.write("pub fn %s_fully_decomposed(c: char) -> Option<&'static [char]> {\n" % name)
-        out.write("    mph_lookup(c.into(), &[\n")
-        for s in salt:
-            out.write("        0x{:x},\n".format(s))
-        out.write("    ],\n")
-        out.write("    {}_DECOMPOSED_KV,\n".format(name.upper()))
-        out.write("    pair_lookup_fk, pair_lookup_fv_opt, None)\n")
-        out.write("}\n")
+        gen_mph_data(name + '_decomposed', table, "(u32, &'static [char])",
+            lambda k: "(0x{:x}, &[{}])".format(k,
+                ", ".join("'\\u{%s}'" % hexify(c) for c in table[k])))
 
 def gen_qc_match(prop_table, out):
     out.write("    match c {\n")
@@ -388,18 +367,8 @@ def gen_nfkd_qc(prop_tables, out):
     out.write("}\n")
 
 def gen_combining_mark(general_category_mark, out):
-    (salt, keys) = minimal_perfect_hash(general_category_mark)
-    out.write("pub fn is_combining_mark(c: char) -> bool {\n")
-    out.write("    mph_lookup(c.into(), &[\n")
-    for s in salt:
-        out.write("        0x{:x},\n".format(s))
-    out.write("    ],\n")
-    out.write("    &[\n")
-    for k in keys:
-        out.write("        0x{:x},\n".format(k))
-    out.write("    ],\n")
-    out.write("    bool_lookup_fk, bool_lookup_fv, false)\n")
-    out.write("}\n")
+    gen_mph_data('combining_mark', general_category_mark, 'u32',
+        lambda k: '0x{:04x}'.format(k))
 
 def gen_stream_safe(leading, trailing, out):
     # This could be done as a hash but the table is very small.
@@ -415,19 +384,8 @@ def gen_stream_safe(leading, trailing, out):
     out.write("}\n")
     out.write("\n")
 
-    (salt, keys) = minimal_perfect_hash(trailing)
-    out.write("pub fn stream_safe_trailing_nonstarters(c: char) -> usize {\n")
-    out.write("    mph_lookup(c.into(), &[\n")
-    for s in salt:
-        out.write("        0x{:x},\n".format(s))
-    out.write("    ],\n")
-    out.write("    &[\n")
-    for k in keys:
-        kv = int(trailing[k]) | (k << 8)
-        out.write("        0x{:x},\n".format(kv))
-    out.write("    ],\n")
-    out.write("    u8_lookup_fk, u8_lookup_fv, 0) as usize\n")
-    out.write("}\n")
+    gen_mph_data('trailing_nonstarters', trailing, 'u32',
+        lambda k: "0x{:X}".format(int(trailing[k]) | (k << 8)))
 
 def gen_tests(tests, out):
     out.write("""#[derive(Debug)]
@@ -463,7 +421,7 @@ def my_hash(x, salt, n):
     return (y * n) >> 32
 
 # Compute minimal perfect hash function, d can be either a dict or list of keys.
-def minimal_perfect_hash(d, singleton_buckets = False):
+def minimal_perfect_hash(d):
     n = len(d)
     buckets = dict((h, []) for h in range(n))
     for key in d:
@@ -475,18 +433,16 @@ def minimal_perfect_hash(d, singleton_buckets = False):
     salts = [0] * n
     keys = [0] * n
     for (bucket_size, h) in bsorted:
+        # Note: the traditional perfect hashing approach would also special-case
+        # bucket_size == 1 here and assign any empty slot, rather than iterating
+        # until rehash finds an empty slot. But we're not doing that so we can
+        # avoid the branch.
         if bucket_size == 0:
             break
-        elif singleton_buckets and bucket_size == 1:
-            for i in range(n):
-                if not claimed[i]:
-                    salts[h] = -(i + 1)
-                    claimed[i] = True
-                    keys[i] = buckets[h][0]
-                    break
         else:
             for salt in range(1, 32768):
                 rehashes = [my_hash(key, salt, n) for key in buckets[h]]
+                # Make sure there are no rehash collisions within this bucket.
                 if all(not claimed[hash] for hash in rehashes):
                     if len(set(rehashes)) < bucket_size:
                         continue
@@ -498,6 +454,17 @@ def minimal_perfect_hash(d, singleton_buckets = False):
                     break
             if salts[h] == 0:
                 print("minimal perfect hashing failed")
+                # Note: if this happens (because of unfortunate data), then there are
+                # a few things that could be done. First, the hash function could be
+                # tweaked. Second, the bucket order could be scrambled (especially the
+                # singletons). Right now, the buckets are sorted, which has the advantage
+                # of being deterministic.
+                #
+                # As a more extreme approach, the singleton bucket optimization could be
+                # applied (give the direct address for singleton buckets, rather than
+                # relying on a rehash). That is definitely the more standard approach in
+                # the minimal perfect hashing literature, but in testing the branch was a
+                # significant slowdown.
                 exit(1)
     return (salts, keys)
 
@@ -507,8 +474,6 @@ if __name__ == '__main__':
         out.write(PREAMBLE)
         out.write("use quick_check::IsNormalized;\n")
         out.write("use quick_check::IsNormalized::*;\n")
-        out.write("\n")
-        out.write("use perfect_hash::*;\n")
         out.write("\n")
 
         version = "(%s, %s, %s)" % tuple(UNICODE_VERSION.split("."))

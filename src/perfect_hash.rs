@@ -10,6 +10,8 @@
 
 //! Support for lookups based on minimal perfect hashing.
 
+use tables::*;
+
 // This function is based on multiplication being fast and is "good enough". Also
 // it can share some work between the unsalted and salted versions.
 #[inline]
@@ -27,7 +29,7 @@ fn my_hash(key: u32, salt: u32, n: usize) -> usize {
 /// The hash function doesn't have to be very good, just good enough that the
 /// resulting map is unique.
 #[inline]
-pub(crate) fn mph_lookup<KV, V, FK, FV>(x: u32, salt: &[u16], kv: &[KV], fk: FK, fv: FV,
+fn mph_lookup<KV, V, FK, FV>(x: u32, salt: &[u16], kv: &[KV], fk: FK, fv: FV,
     default: V) -> V
     where KV: Copy, FK: Fn(KV) -> u32, FV: Fn(KV) -> V
 {
@@ -42,37 +44,75 @@ pub(crate) fn mph_lookup<KV, V, FK, FV>(x: u32, salt: &[u16], kv: &[KV], fk: FK,
 
 /// Extract the key in a 24 bit key and 8 bit value packed in a u32.
 #[inline]
-pub(crate) fn u8_lookup_fk(kv: u32) -> u32 {
+fn u8_lookup_fk(kv: u32) -> u32 {
     kv >> 8
 }
 
 /// Extract the value in a 24 bit key and 8 bit value packed in a u32.
 #[inline]
-pub(crate) fn u8_lookup_fv(kv: u32) -> u8 {
+fn u8_lookup_fv(kv: u32) -> u8 {
     (kv & 0xff) as u8
 }
 
 /// Extract the key for a boolean lookup.
 #[inline]
-pub(crate) fn bool_lookup_fk(kv: u32) -> u32 {
+fn bool_lookup_fk(kv: u32) -> u32 {
     kv
 }
 
 /// Extract the value for a boolean lookup.
 #[inline]
-pub(crate) fn bool_lookup_fv(_kv: u32) -> bool {
+fn bool_lookup_fv(_kv: u32) -> bool {
     true
 }
 
 /// Extract the key in a pair.
 #[inline]
-pub(crate) fn pair_lookup_fk<T>(kv: (u32, T)) -> u32 {
+fn pair_lookup_fk<T>(kv: (u32, T)) -> u32 {
     kv.0
 }
 
 /// Extract the value in a pair, returning an option.
 #[inline]
-pub(crate) fn pair_lookup_fv_opt<T>(kv: (u32, T)) -> Option<T> {
+fn pair_lookup_fv_opt<T>(kv: (u32, T)) -> Option<T> {
     Some(kv.1)
 }
 
+/// Look up the canonical combining class for a codepoint.
+/// 
+/// The value returned is as defined in the Unicode Character Database.
+pub fn canonical_combining_class(c: char) -> u8 {
+    mph_lookup(c.into(), CANONICAL_COMBINING_CLASS_SALT, CANONICAL_COMBINING_CLASS_KV,
+        u8_lookup_fk, u8_lookup_fv, 0)
+}
+
+pub(crate) fn composition_table(c1: char, c2: char) -> Option<char> {
+    if c1 < '\u{10000}' && c2 < '\u{10000}' {
+        mph_lookup((c1 as u32) << 16 | (c2 as u32),
+        COMPOSITION_TABLE_SALT, COMPOSITION_TABLE_KV,
+        pair_lookup_fk, pair_lookup_fv_opt, None)
+    } else {
+        composition_table_astral(c1, c2)
+    }
+}
+
+pub(crate) fn canonical_fully_decomposed(c: char) -> Option<&'static [char]> {
+    mph_lookup(c.into(), CANONICAL_DECOMPOSED_SALT, CANONICAL_DECOMPOSED_KV,
+        pair_lookup_fk, pair_lookup_fv_opt, None)
+}
+
+pub(crate) fn compatibility_fully_decomposed(c: char) -> Option<&'static [char]> {
+    mph_lookup(c.into(), COMPATIBILITY_DECOMPOSED_SALT, COMPATIBILITY_DECOMPOSED_KV,
+        pair_lookup_fk, pair_lookup_fv_opt, None)
+}
+
+/// Return whether the given character is a combining mark (`General_Category=Mark`)
+pub fn is_combining_mark(c: char) -> bool {
+    mph_lookup(c.into(), COMBINING_MARK_SALT, COMBINING_MARK_KV,
+        bool_lookup_fk, bool_lookup_fv, false)
+}
+
+pub fn stream_safe_trailing_nonstarters(c: char) -> usize {
+    mph_lookup(c.into(), TRAILING_NONSTARTERS_SALT, TRAILING_NONSTARTERS_KV,
+        u8_lookup_fk, u8_lookup_fv, 0) as usize
+}
