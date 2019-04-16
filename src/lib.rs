@@ -65,7 +65,9 @@ pub use stream_safe::StreamSafe;
 use std::str::Chars;
 
 mod decompose;
+mod lookups;
 mod normalize;
+mod perfect_hash;
 mod recompose;
 mod quick_check;
 mod stream_safe;
@@ -80,11 +82,7 @@ mod normalization_tests;
 pub mod char {
     pub use normalize::{decompose_canonical, decompose_compatible, compose};
 
-    /// Look up the canonical combining class of a character.
-    pub use tables::canonical_combining_class;
-
-    /// Return whether the given character is a combining mark (`General_Category=Mark`)
-    pub use tables::is_combining_mark;
+    pub use lookups::{canonical_combining_class, is_combining_mark};
 }
 
 

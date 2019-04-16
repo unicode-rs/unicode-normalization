@@ -1,4 +1,5 @@
 use UnicodeNormalization;
+use lookups::canonical_combining_class;
 use stream_safe;
 use tables;
 
@@ -32,7 +33,7 @@ fn quick_check<F, I>(s: I, is_allowed: F, stream_safe: bool) -> IsNormalized
         }
 
         // Otherwise, lookup the combining class and QC property
-        let cc = tables::canonical_combining_class(ch);
+        let cc = canonical_combining_class(ch);
         if last_cc > cc && cc != 0 {
             return IsNormalized::No;
         }
