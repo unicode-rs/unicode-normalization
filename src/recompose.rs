@@ -9,7 +9,6 @@
 // except according to those terms.
 
 use decompose::Decompositions;
-use smallvec::SmallVec;
 use std::fmt::{self, Write};
 
 #[derive(Clone)]
@@ -24,7 +23,7 @@ enum RecompositionState {
 pub struct Recompositions<I> {
     iter: Decompositions<I>,
     state: RecompositionState,
-    buffer: SmallVec<[char; 4]>,
+    buffer: Vec<char>,
     composee: Option<char>,
     last_ccc: Option<u8>,
 }
@@ -34,7 +33,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_canonical(iter),
         state: self::RecompositionState::Composing,
-        buffer: SmallVec::new(),
+        buffer: Vec::with_capacity(4),
         composee: None,
         last_ccc: None,
     }
@@ -45,7 +44,7 @@ pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_compatible(iter),
         state: self::RecompositionState::Composing,
-        buffer: SmallVec::new(),
+        buffer: Vec::with_capacity(4),
         composee: None,
         last_ccc: None,
     }

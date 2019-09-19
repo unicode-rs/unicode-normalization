@@ -7,7 +7,6 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use std::iter::Fuse;
 use std::ops::Range;
@@ -32,7 +31,7 @@ pub struct Decompositions<I> {
     // 2) "Ready" characters which are sorted and ready to emit on demand;
     // 3) A "pending" block which stills needs more characters for us to be able
     //    to sort in canonical order and is not safe to emit.
-    buffer: SmallVec<[(u8, char); 4]>,
+    buffer: Vec<(u8, char)>,
     ready: Range<usize>,
 }
 
@@ -41,7 +40,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
         iter: iter.fuse(),
-        buffer: SmallVec::new(),
+        buffer: Vec::with_capacity(4),
         ready: 0..0,
     }
 }
@@ -51,7 +50,7 @@ pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
         iter: iter.fuse(),
-        buffer: SmallVec::new(),
+        buffer: Vec::with_capacity(4),
         ready: 0..0,
     }
 }
@@ -78,13 +77,7 @@ impl<I> Decompositions<I> {
 
     #[inline]
     fn reset_buffer(&mut self) {
-        // Equivalent to `self.buffer.drain(0..self.ready.end)` (if SmallVec
-        // supported this API)
-        let pending = self.buffer.len() - self.ready.end;
-        for i in 0..pending {
-            self.buffer[i] = self.buffer[i + self.ready.end];
-        }
-        self.buffer.truncate(pending);
+        let _ = self.buffer.drain(0..self.ready.end).count();
         self.ready = 0..0;
     }
 
