@@ -19217,6 +19217,7 @@ pub(crate) const COMBINING_MARK_KV: &[u32] = &[
 
 
 #[inline]
+#[allow(ellipsis_inclusive_range_patterns)]
 pub fn qc_nfc(c: char) -> IsNormalized {
     match c {
         '\u{0340}'...'\u{0341}' => No,
@@ -19340,6 +19341,7 @@ pub fn qc_nfc(c: char) -> IsNormalized {
 }
 
 #[inline]
+#[allow(ellipsis_inclusive_range_patterns)]
 pub fn qc_nfkc(c: char) -> IsNormalized {
     match c {
         '\u{00A0}' => No,
@@ -19776,6 +19778,7 @@ pub fn qc_nfkc(c: char) -> IsNormalized {
 }
 
 #[inline]
+#[allow(ellipsis_inclusive_range_patterns)]
 pub fn qc_nfd(c: char) -> IsNormalized {
     match c {
         '\u{00C0}'...'\u{00C5}' => No,
@@ -20025,6 +20028,7 @@ pub fn qc_nfd(c: char) -> IsNormalized {
 }
 
 #[inline]
+#[allow(ellipsis_inclusive_range_patterns)]
 pub fn qc_nfkd(c: char) -> IsNormalized {
     match c {
         '\u{00A0}' => No,

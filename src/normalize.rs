@@ -119,6 +119,7 @@ pub(crate) fn hangul_decomposition_length(s: char) -> usize {
 // Compose a pair of Hangul Jamo
 #[allow(unsafe_code)]
 #[inline(always)]
+#[allow(ellipsis_inclusive_range_patterns)]
 fn compose_hangul(a: char, b: char) -> Option<char> {
     let (a, b) = (a as u32, b as u32);
     match (a, b) {
