@@ -73,11 +73,6 @@ mod quick_check;
 mod stream_safe;
 mod tables;
 
-#[cfg(test)]
-mod test;
-#[cfg(test)]
-mod normalization_tests;
-
 /// Methods for composing and decomposing characters.
 pub mod char {
     pub use normalize::{decompose_canonical, decompose_compatible, compose};
@@ -167,5 +162,35 @@ impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
     #[inline]
     fn stream_safe(self) -> StreamSafe<I> {
         StreamSafe::new(self)
+    }
+}
+
+#[cfg(all(bloaty_test,test))]
+mod normalization_tests;
+
+mod tests {
+    #[cfg(bloaty_test)]
+    #[test]
+    fn test_quick_check() {
+        use normalization_tests::NORMALIZATION_TESTS;
+        use quick_check;
+        for test in NORMALIZATION_TESTS {
+            assert!(quick_check::is_nfc(test.nfc));
+            assert!(quick_check::is_nfd(test.nfd));
+            assert!(quick_check::is_nfkc(test.nfkc));
+            assert!(quick_check::is_nfkd(test.nfkd));
+            if test.nfc != test.nfd {
+                assert!(!quick_check::is_nfc(test.nfd));
+                assert!(!quick_check::is_nfd(test.nfc));
+            }
+            if test.nfkc != test.nfc {
+                assert!(!quick_check::is_nfkc(test.nfc));
+                assert!(quick_check::is_nfc(test.nfkc));
+            }
+            if test.nfkd != test.nfd {
+                assert!(!quick_check::is_nfkd(test.nfd));
+                assert!(quick_check::is_nfd(test.nfkd));
+            }
+        }
     }
 }
