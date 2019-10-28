@@ -75,7 +75,7 @@ mod tables;
 
 #[cfg(test)]
 mod test;
-#[cfg(test)]
+#[cfg(all(test,not(minimal_tests)))]
 mod normalization_tests;
 
 /// Methods for composing and decomposing characters.

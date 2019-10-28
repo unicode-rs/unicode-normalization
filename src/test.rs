@@ -95,6 +95,7 @@ fn test_nfkc() {
     t!("a\u{300}\u{305}\u{315}\u{5ae}b", "\u{e0}\u{5ae}\u{305}\u{315}b");
 }
 
+#[cfg(not(minimal_tests))]
 #[test]
 fn test_official() {
     use normalization_tests::NORMALIZATION_TESTS;
@@ -158,7 +159,7 @@ fn test_official() {
         }
     }
 }
-
+#[cfg(not(minimal_tests))]
 #[test]
 fn test_quick_check() {
     use normalization_tests::NORMALIZATION_TESTS;

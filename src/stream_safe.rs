@@ -111,6 +111,7 @@ mod tests {
         classify_nonstarters,
     };
     use std::char;
+    #[cfg(not(minimal_tests))]
     use normalization_tests::NORMALIZATION_TESTS;
     use normalize::decompose_compatible;
     use lookups::canonical_combining_class;
@@ -119,6 +120,7 @@ mod tests {
         StreamSafe::new(s.chars()).collect()
     }
 
+    #[cfg(not(minimal_tests))]
     #[test]
     fn test_normalization_tests_unaffected() {
         for test in NORMALIZATION_TESTS {

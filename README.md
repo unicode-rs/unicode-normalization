@@ -33,3 +33,26 @@ to your `Cargo.toml`:
 [dependencies]
 unicode-normalization = "0.1.8"
 ```
+
+## Linux Vendors / Downstream
+As is, tests won't work on the published crate, as important
+corpus data required for fully testing functionality otherwise
+bloats the size of the crate.
+
+Tests aren't hugely meaningful without this, but there are two
+workarounds:
+
+```bash
+RUSTFLAGS="--cfg minimal_tests" cargo test
+```
+
+This will make the crate compile, and some arbitrary set of lower
+quality tests pass.
+
+```bash
+python scripts/unicode.py
+cp ./normalization_tests.rs src/
+```
+
+This will generate the full corpus required for tests to work,
+without needing to pass any special flags.
