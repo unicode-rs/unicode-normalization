@@ -7,7 +7,7 @@ Unicode character composition and decomposition utilities
 as described in
 [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/).
 
-This crate requires Rust 1.21+.
+This crate requires Rust 1.36+.
 
 ```rust
 extern crate unicode_normalization;
