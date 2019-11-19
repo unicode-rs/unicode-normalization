@@ -1,7 +1,22 @@
 extern crate unicode_normalization;
 use unicode_normalization::UnicodeNormalization;
-mod normalization_tests;
-use normalization_tests::NORMALIZATION_TESTS;
+use unicode_normalization::__test_api::{
+     stream_safe,
+};
+
+mod data {
+    pub mod normalization_tests;
+}
+use data::normalization_tests::NORMALIZATION_TESTS;
+
+#[test]
+fn test_normalization_tests_unaffected() {
+    for test in NORMALIZATION_TESTS {
+        for &s in &[test.source, test.nfc, test.nfd, test.nfkc, test.nfkd] {
+            assert_eq!(stream_safe(s), s);
+        }
+    }
+}
 
 #[test]
 fn test_official() {
@@ -88,4 +103,3 @@ fn test_quick_check() {
         }
     }
 }
-
