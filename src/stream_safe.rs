@@ -111,21 +111,11 @@ mod tests {
         classify_nonstarters,
     };
     use std::char;
-    use normalization_tests::NORMALIZATION_TESTS;
     use normalize::decompose_compatible;
     use lookups::canonical_combining_class;
 
     fn stream_safe(s: &str) -> String {
         StreamSafe::new(s.chars()).collect()
-    }
-
-    #[test]
-    fn test_normalization_tests_unaffected() {
-        for test in NORMALIZATION_TESTS {
-            for &s in &[test.source, test.nfc, test.nfd, test.nfkc, test.nfkd] {
-                assert_eq!(stream_safe(s), s);
-            }
-        }
     }
 
     #[test]
