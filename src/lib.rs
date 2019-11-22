@@ -75,8 +75,8 @@ mod tables;
 
 #[cfg(test)]
 mod test;
-#[cfg(test)]
-mod normalization_tests;
+#[doc(hidden)]
+pub mod __test_api;
 
 /// Methods for composing and decomposing characters.
 pub mod char {
