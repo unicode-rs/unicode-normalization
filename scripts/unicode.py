@@ -344,24 +344,28 @@ def gen_qc_match(prop_table, out):
 
 def gen_nfc_qc(prop_tables, out):
     out.write("#[inline]\n")
+    out.write("#[allow(ellipsis_inclusive_range_patterns)]\n")
     out.write("pub fn qc_nfc(c: char) -> IsNormalized {\n")
     gen_qc_match(prop_tables['NFC_QC'], out)
     out.write("}\n")
 
 def gen_nfkc_qc(prop_tables, out):
     out.write("#[inline]\n")
+    out.write("#[allow(ellipsis_inclusive_range_patterns)]\n")
     out.write("pub fn qc_nfkc(c: char) -> IsNormalized {\n")
     gen_qc_match(prop_tables['NFKC_QC'], out)
     out.write("}\n")
 
 def gen_nfd_qc(prop_tables, out):
     out.write("#[inline]\n")
+    out.write("#[allow(ellipsis_inclusive_range_patterns)]\n")
     out.write("pub fn qc_nfd(c: char) -> IsNormalized {\n")
     gen_qc_match(prop_tables['NFD_QC'], out)
     out.write("}\n")
 
 def gen_nfkd_qc(prop_tables, out):
     out.write("#[inline]\n")
+    out.write("#[allow(ellipsis_inclusive_range_patterns)]\n")
     out.write("pub fn qc_nfkd(c: char) -> IsNormalized {\n")
     gen_qc_match(prop_tables['NFKD_QC'], out)
     out.write("}\n")
