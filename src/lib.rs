@@ -41,7 +41,7 @@
 #![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
        html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
 
-extern crate smallvec;
+extern crate tinyvec;
 
 pub use tables::UNICODE_VERSION;
 pub use decompose::Decompositions;
