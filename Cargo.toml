@@ -21,4 +21,4 @@ Unicode Standard Annex #15.
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "tests/*" ]
 
 [dependencies]
-smallvec = "1.0"
+smallvec = "1.1"
