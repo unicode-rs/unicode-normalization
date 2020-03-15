@@ -78,8 +78,8 @@ impl<I> Decompositions<I> {
 
     #[inline]
     fn reset_buffer(&mut self) {
-        // Equivalent to `self.buffer.drain(0..self.ready.end)` (if SmallVec
-        // supported this API)
+        // Equivalent to `self.buffer.drain(0..self.ready.end)`
+        // but faster than drain() if the buffer is a SmallVec or TinyVec
         let pending = self.buffer.len() - self.ready.end;
         for i in 0..pending {
             self.buffer[i] = self.buffer[i + self.ready.end];
