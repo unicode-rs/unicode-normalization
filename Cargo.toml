@@ -20,5 +20,6 @@ Unicode Standard Annex #15.
 
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "tests/*" ]
 
-[dependencies]
-smallvec = "1.1"
+[dependencies.tinyvec]
+version = "0.3.2"
+features = ["alloc"]
