@@ -1,5 +1,5 @@
 #![feature(test)]
-#![feature(iterator_step_by)]
+
 extern crate test;
 extern crate unicode_normalization;
 
