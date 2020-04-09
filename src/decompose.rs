@@ -7,10 +7,10 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-use tinyvec::TinyVec;
 use std::fmt::{self, Write};
 use std::iter::Fuse;
 use std::ops::Range;
+use tinyvec::TinyVec;
 
 #[derive(Clone)]
 enum DecompositionType {
@@ -37,7 +37,7 @@ pub struct Decompositions<I> {
 }
 
 #[inline]
-pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
+pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
         iter: iter.fuse(),
@@ -47,7 +47,7 @@ pub fn new_canonical<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
 }
 
 #[inline]
-pub fn new_compatible<I: Iterator<Item=char>>(iter: I) -> Decompositions<I> {
+pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
         iter: iter.fuse(),
@@ -99,7 +99,7 @@ impl<I> Decompositions<I> {
     }
 }
 
-impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
+impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
     type Item = char;
 
     #[inline]
@@ -149,7 +149,7 @@ impl<I: Iterator<Item=char>> Iterator for Decompositions<I> {
     }
 }
 
-impl<I: Iterator<Item=char> + Clone> fmt::Display for Decompositions<I> {
+impl<I: Iterator<Item = char> + Clone> fmt::Display for Decompositions<I> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for c in self.clone() {
             f.write_char(c)?;

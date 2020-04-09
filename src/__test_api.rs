@@ -6,7 +6,7 @@
 
 use crate::stream_safe::StreamSafe;
 pub fn stream_safe(s: &str) -> String {
-        StreamSafe::new(s.chars()).collect()
+    StreamSafe::new(s.chars()).collect()
 }
 pub mod quick_check {
     pub use crate::quick_check::*;

@@ -38,60 +38,51 @@
 //! ```
 
 #![deny(missing_docs, unsafe_code)]
-#![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
-       html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
+#![doc(
+    html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
+    html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png"
+)]
 
 extern crate tinyvec;
 
-pub use crate::tables::UNICODE_VERSION;
 pub use crate::decompose::Decompositions;
 pub use crate::quick_check::{
+    is_nfc, is_nfc_quick, is_nfc_stream_safe, is_nfc_stream_safe_quick, is_nfd, is_nfd_quick,
+    is_nfd_stream_safe, is_nfd_stream_safe_quick, is_nfkc, is_nfkc_quick, is_nfkd, is_nfkd_quick,
     IsNormalized,
-    is_nfc,
-    is_nfc_quick,
-    is_nfkc,
-    is_nfkc_quick,
-    is_nfc_stream_safe,
-    is_nfc_stream_safe_quick,
-    is_nfd,
-    is_nfd_quick,
-    is_nfkd,
-    is_nfkd_quick,
-    is_nfd_stream_safe,
-    is_nfd_stream_safe_quick,
 };
 pub use crate::recompose::Recompositions;
 pub use crate::stream_safe::StreamSafe;
+pub use crate::tables::UNICODE_VERSION;
 use std::str::Chars;
 
 mod decompose;
 mod lookups;
 mod normalize;
 mod perfect_hash;
-mod recompose;
 mod quick_check;
+mod recompose;
 mod stream_safe;
 
 #[rustfmt::skip]
 mod tables;
 
-#[cfg(test)]
-mod test;
 #[doc(hidden)]
 pub mod __test_api;
+#[cfg(test)]
+mod test;
 
 /// Methods for composing and decomposing characters.
 pub mod char {
-    pub use crate::normalize::{decompose_canonical, decompose_compatible, compose};
+    pub use crate::normalize::{compose, decompose_canonical, decompose_compatible};
 
     pub use crate::lookups::{canonical_combining_class, is_combining_mark};
 }
 
-
 /// Methods for iterating over strings while applying Unicode normalizations
 /// as described in
 /// [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/).
-pub trait UnicodeNormalization<I: Iterator<Item=char>> {
+pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// Returns an iterator over the string in Unicode Normalization Form D
     /// (canonical decomposition).
     fn nfd(self) -> Decompositions<I>;
@@ -140,7 +131,7 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     }
 }
 
-impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
+impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfd(self) -> Decompositions<I> {
         decompose::new_canonical(self)
