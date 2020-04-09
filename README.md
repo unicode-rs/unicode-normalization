@@ -33,3 +33,7 @@ to your `Cargo.toml`:
 [dependencies]
 unicode-normalization = "0.1.8"
 ```
+
+## `no_std` + `alloc` support
+
+This crate is completely `no_std` + `alloc` compatible. This can be enabled by disabling the `std` feature, i.e. specifying `default-features = false` for this crate on your `Cargo.toml`.
