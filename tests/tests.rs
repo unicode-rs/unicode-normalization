@@ -7,7 +7,7 @@ use unicode_normalization::__test_api::{
 mod data {
     pub mod normalization_tests;
 }
-use data::normalization_tests::NORMALIZATION_TESTS;
+use crate::data::normalization_tests::NORMALIZATION_TESTS;
 
 #[test]
 fn test_normalization_tests_unaffected() {

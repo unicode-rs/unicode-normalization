@@ -11,7 +11,7 @@
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
 use std::char;
 use std::ops::FnMut;
-use lookups::{canonical_fully_decomposed, composition_table, compatibility_fully_decomposed};
+use crate::lookups::{canonical_fully_decomposed, composition_table, compatibility_fully_decomposed};
 
 /// Compute canonical Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)
@@ -74,8 +74,8 @@ const T_BASE: u32 = 0x11A7;
 const L_COUNT: u32 = 19;
 const V_COUNT: u32 = 21;
 const T_COUNT: u32 = 28;
-const N_COUNT: u32 = (V_COUNT * T_COUNT);
-const S_COUNT: u32 = (L_COUNT * N_COUNT);
+const N_COUNT: u32 = V_COUNT * T_COUNT;
+const S_COUNT: u32 = L_COUNT * N_COUNT;
 
 const S_LAST: u32 = S_BASE + S_COUNT - 1;
 const L_LAST: u32 = L_BASE + L_COUNT - 1;

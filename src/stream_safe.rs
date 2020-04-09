@@ -1,12 +1,12 @@
-use normalize::{
+use crate::normalize::{
     hangul_decomposition_length,
     is_hangul_syllable,
 };
-use lookups::{
+use crate::lookups::{
     canonical_combining_class, canonical_fully_decomposed, compatibility_fully_decomposed,
     stream_safe_trailing_nonstarters,
 };
-use tables::stream_safe_leading_nonstarters;
+use crate::tables::stream_safe_leading_nonstarters;
 
 pub(crate) const MAX_NONSTARTERS: usize = 30;
 const COMBINING_GRAPHEME_JOINER: char = '\u{034F}';
@@ -111,8 +111,8 @@ mod tests {
         classify_nonstarters,
     };
     use std::char;
-    use normalize::decompose_compatible;
-    use lookups::canonical_combining_class;
+    use crate::normalize::decompose_compatible;
+    use crate::lookups::canonical_combining_class;
 
     fn stream_safe(s: &str) -> String {
         StreamSafe::new(s.chars()).collect()

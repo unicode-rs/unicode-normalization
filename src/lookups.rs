@@ -10,8 +10,8 @@
 
 //! Lookups of unicode properties using minimal perfect hashing.
 
-use perfect_hash::mph_lookup;
-use tables::*;
+use crate::perfect_hash::mph_lookup;
+use crate::tables::*;
 
 /// Look up the canonical combining class for a codepoint.
 /// 

@@ -43,9 +43,9 @@
 
 extern crate tinyvec;
 
-pub use tables::UNICODE_VERSION;
-pub use decompose::Decompositions;
-pub use quick_check::{
+pub use crate::tables::UNICODE_VERSION;
+pub use crate::decompose::Decompositions;
+pub use crate::quick_check::{
     IsNormalized,
     is_nfc,
     is_nfc_quick,
@@ -60,8 +60,8 @@ pub use quick_check::{
     is_nfd_stream_safe,
     is_nfd_stream_safe_quick,
 };
-pub use recompose::Recompositions;
-pub use stream_safe::StreamSafe;
+pub use crate::recompose::Recompositions;
+pub use crate::stream_safe::StreamSafe;
 use std::str::Chars;
 
 mod decompose;
@@ -80,9 +80,9 @@ pub mod __test_api;
 
 /// Methods for composing and decomposing characters.
 pub mod char {
-    pub use normalize::{decompose_canonical, decompose_compatible, compose};
+    pub use crate::normalize::{decompose_canonical, decompose_compatible, compose};
 
-    pub use lookups::{canonical_combining_class, is_combining_mark};
+    pub use crate::lookups::{canonical_combining_class, is_combining_mark};
 }
 
 

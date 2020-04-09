@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use decompose::Decompositions;
+use crate::decompose::Decompositions;
 use tinyvec::TinyVec;
 use std::fmt::{self, Write};
 

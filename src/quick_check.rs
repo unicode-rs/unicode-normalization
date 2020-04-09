@@ -1,7 +1,7 @@
-use UnicodeNormalization;
-use lookups::canonical_combining_class;
-use stream_safe;
-use tables;
+use crate::UnicodeNormalization;
+use crate::lookups::canonical_combining_class;
+use crate::stream_safe;
+use crate::tables;
 
 /// The QuickCheck algorithm can quickly determine if a text is or isn't
 /// normalized without any allocations in many cases, but it has to be able to
