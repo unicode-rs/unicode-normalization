@@ -92,27 +92,22 @@ pub mod char {
 pub trait UnicodeNormalization<I: Iterator<Item=char>> {
     /// Returns an iterator over the string in Unicode Normalization Form D
     /// (canonical decomposition).
-    #[inline]
     fn nfd(self) -> Decompositions<I>;
 
     /// Returns an iterator over the string in Unicode Normalization Form KD
     /// (compatibility decomposition).
-    #[inline]
     fn nfkd(self) -> Decompositions<I>;
 
     /// An Iterator over the string in Unicode Normalization Form C
     /// (canonical decomposition followed by canonical composition).
-    #[inline]
     fn nfc(self) -> Recompositions<I>;
 
     /// An Iterator over the string in Unicode Normalization Form KC
     /// (compatibility decomposition followed by canonical composition).
-    #[inline]
     fn nfkc(self) -> Recompositions<I>;
 
     /// An Iterator over the string with Conjoining Grapheme Joiner characters
     /// inserted according to the Stream-Safe Text Process (UAX15-D4)
-    #[inline]
     fn stream_safe(self) -> StreamSafe<I>;
 }
 
