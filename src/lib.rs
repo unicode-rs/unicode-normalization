@@ -42,6 +42,13 @@
     html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
     html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png"
 )]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate core;
 
 extern crate tinyvec;
 
@@ -54,7 +61,9 @@ pub use crate::quick_check::{
 pub use crate::recompose::Recompositions;
 pub use crate::stream_safe::StreamSafe;
 pub use crate::tables::UNICODE_VERSION;
-use std::str::Chars;
+use core::str::Chars;
+
+mod no_std_prelude;
 
 mod decompose;
 mod lookups;

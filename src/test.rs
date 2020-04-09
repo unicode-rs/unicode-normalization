@@ -10,7 +10,10 @@
 
 use super::char::is_combining_mark;
 use super::UnicodeNormalization;
-use std::char;
+use core::char;
+
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 
 #[test]
 fn test_nfd() {

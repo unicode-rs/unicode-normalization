@@ -7,9 +7,9 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-use std::fmt::{self, Write};
-use std::iter::Fuse;
-use std::ops::Range;
+use core::fmt::{self, Write};
+use core::iter::Fuse;
+use core::ops::Range;
 use tinyvec::TinyVec;
 
 #[derive(Clone)]

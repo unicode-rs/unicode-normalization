@@ -12,8 +12,8 @@
 use crate::lookups::{
     canonical_fully_decomposed, compatibility_fully_decomposed, composition_table,
 };
-use std::char;
-use std::ops::FnMut;
+
+use core::{char, ops::FnMut};
 
 /// Compute canonical Unicode decomposition for character.
 /// See [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/)

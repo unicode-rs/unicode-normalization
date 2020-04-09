@@ -25,3 +25,8 @@ exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "tests/*" ]
 [dependencies.tinyvec]
 version = "0.3.3"
 features = ["alloc"]
+
+
+[features]
+default = ["std"]
+std = []

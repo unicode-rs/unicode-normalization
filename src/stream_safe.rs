@@ -107,7 +107,11 @@ mod tests {
     use super::{classify_nonstarters, StreamSafe};
     use crate::lookups::canonical_combining_class;
     use crate::normalize::decompose_compatible;
-    use std::char;
+
+    #[cfg(not(feature = "std"))]
+    use crate::no_std_prelude::*;
+
+    use core::char;
 
     fn stream_safe(s: &str) -> String {
         StreamSafe::new(s.chars()).collect()
@@ -131,7 +135,7 @@ mod tests {
                 None => continue,
             };
             let c = classify_nonstarters(ch);
-            let mut s = vec![];
+            let mut s = Vec::new();
             decompose_compatible(ch, |c| s.push(c));
 
             assert_eq!(s.len(), c.decomposition_len);

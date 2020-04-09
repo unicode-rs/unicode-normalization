@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use crate::decompose::Decompositions;
-use std::fmt::{self, Write};
+use core::fmt::{self, Write};
 use tinyvec::TinyVec;
 
 #[derive(Clone)]
