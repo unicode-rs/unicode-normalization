@@ -20,16 +20,25 @@ fn my_hash(key: u32, salt: u32, n: usize) -> usize {
 }
 
 /// Do a lookup using minimal perfect hashing.
-/// 
+///
 /// The table is stored as a sequence of "salt" values, then a sequence of
 /// values that contain packed key/value pairs. The strategy is to hash twice.
 /// The first hash retrieves a salt value that makes the second hash unique.
 /// The hash function doesn't have to be very good, just good enough that the
 /// resulting map is unique.
 #[inline]
-pub(crate) fn mph_lookup<KV, V, FK, FV>(x: u32, salt: &[u16], kv: &[KV], fk: FK, fv: FV,
-    default: V) -> V
-    where KV: Copy, FK: Fn(KV) -> u32, FV: Fn(KV) -> V
+pub(crate) fn mph_lookup<KV, V, FK, FV>(
+    x: u32,
+    salt: &[u16],
+    kv: &[KV],
+    fk: FK,
+    fv: FV,
+    default: V,
+) -> V
+where
+    KV: Copy,
+    FK: Fn(KV) -> u32,
+    FV: Fn(KV) -> V,
 {
     let s = salt[my_hash(x, 0, salt.len())] as u32;
     let key_val = kv[my_hash(x, s, salt.len())];

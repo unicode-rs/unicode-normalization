@@ -1,7 +1,7 @@
 [package]
 
 name = "unicode-normalization"
-version = "0.1.12"
+version = "0.1.13"
 authors = ["kwantam <kwantam@gmail.com>"]
 
 homepage = "https://github.com/unicode-rs/unicode-normalization"
@@ -18,8 +18,15 @@ Decomposition and Recomposition, as described in
 Unicode Standard Annex #15.
 """
 
+edition = "2018"
+
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "tests/*" ]
 
 [dependencies.tinyvec]
-version = "0.3.2"
+version = "0.3.3"
 features = ["alloc"]
+
+
+[features]
+default = ["std"]
+std = []

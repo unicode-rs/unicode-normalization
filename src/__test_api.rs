@@ -4,10 +4,15 @@
 //
 // If you're caught using this outside this crates tests/, you get to clean up the mess.
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
+
 use crate::stream_safe::StreamSafe;
+
 pub fn stream_safe(s: &str) -> String {
-        StreamSafe::new(s.chars()).collect()
+    StreamSafe::new(s.chars()).collect()
 }
+
 pub mod quick_check {
     pub use crate::quick_check::*;
 }

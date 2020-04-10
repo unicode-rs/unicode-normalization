@@ -38,81 +38,78 @@
 //! ```
 
 #![deny(missing_docs, unsafe_code)]
-#![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
-       html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
+#![doc(
+    html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
+    html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png"
+)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate core;
 
 extern crate tinyvec;
 
-pub use tables::UNICODE_VERSION;
-pub use decompose::Decompositions;
-pub use quick_check::{
+pub use crate::decompose::Decompositions;
+pub use crate::quick_check::{
+    is_nfc, is_nfc_quick, is_nfc_stream_safe, is_nfc_stream_safe_quick, is_nfd, is_nfd_quick,
+    is_nfd_stream_safe, is_nfd_stream_safe_quick, is_nfkc, is_nfkc_quick, is_nfkd, is_nfkd_quick,
     IsNormalized,
-    is_nfc,
-    is_nfc_quick,
-    is_nfkc,
-    is_nfkc_quick,
-    is_nfc_stream_safe,
-    is_nfc_stream_safe_quick,
-    is_nfd,
-    is_nfd_quick,
-    is_nfkd,
-    is_nfkd_quick,
-    is_nfd_stream_safe,
-    is_nfd_stream_safe_quick,
 };
-pub use recompose::Recompositions;
-pub use stream_safe::StreamSafe;
-use std::str::Chars;
+pub use crate::recompose::Recompositions;
+pub use crate::stream_safe::StreamSafe;
+pub use crate::tables::UNICODE_VERSION;
+use core::str::Chars;
+
+mod no_std_prelude;
 
 mod decompose;
 mod lookups;
 mod normalize;
 mod perfect_hash;
-mod recompose;
 mod quick_check;
+mod recompose;
 mod stream_safe;
+
+#[rustfmt::skip]
 mod tables;
 
-#[cfg(test)]
-mod test;
 #[doc(hidden)]
 pub mod __test_api;
+#[cfg(test)]
+mod test;
 
 /// Methods for composing and decomposing characters.
 pub mod char {
-    pub use normalize::{decompose_canonical, decompose_compatible, compose};
+    pub use crate::normalize::{compose, decompose_canonical, decompose_compatible};
 
-    pub use lookups::{canonical_combining_class, is_combining_mark};
+    pub use crate::lookups::{canonical_combining_class, is_combining_mark};
 }
-
 
 /// Methods for iterating over strings while applying Unicode normalizations
 /// as described in
 /// [Unicode Standard Annex #15](http://www.unicode.org/reports/tr15/).
-pub trait UnicodeNormalization<I: Iterator<Item=char>> {
+pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// Returns an iterator over the string in Unicode Normalization Form D
     /// (canonical decomposition).
-    #[inline]
     fn nfd(self) -> Decompositions<I>;
 
     /// Returns an iterator over the string in Unicode Normalization Form KD
     /// (compatibility decomposition).
-    #[inline]
     fn nfkd(self) -> Decompositions<I>;
 
     /// An Iterator over the string in Unicode Normalization Form C
     /// (canonical decomposition followed by canonical composition).
-    #[inline]
     fn nfc(self) -> Recompositions<I>;
 
     /// An Iterator over the string in Unicode Normalization Form KC
     /// (compatibility decomposition followed by canonical composition).
-    #[inline]
     fn nfkc(self) -> Recompositions<I>;
 
     /// An Iterator over the string with Conjoining Grapheme Joiner characters
     /// inserted according to the Stream-Safe Text Process (UAX15-D4)
-    #[inline]
     fn stream_safe(self) -> StreamSafe<I>;
 }
 
@@ -143,7 +140,7 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     }
 }
 
-impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
+impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfd(self) -> Decompositions<I> {
         decompose::new_canonical(self)

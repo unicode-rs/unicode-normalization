@@ -1,13 +1,11 @@
 extern crate unicode_normalization;
 use unicode_normalization::UnicodeNormalization;
-use unicode_normalization::__test_api::{
-     stream_safe,
-};
+use unicode_normalization::__test_api::stream_safe;
 
 mod data {
     pub mod normalization_tests;
 }
-use data::normalization_tests::NORMALIZATION_TESTS;
+use crate::data::normalization_tests::NORMALIZATION_TESTS;
 
 #[test]
 fn test_normalization_tests_unaffected() {
@@ -21,7 +19,9 @@ fn test_normalization_tests_unaffected() {
 #[test]
 fn test_official() {
     macro_rules! normString {
-        ($method: ident, $input: expr) => { $input.$method().collect::<String>() }
+        ($method: ident, $input: expr) => {
+            $input.$method().collect::<String>()
+        };
     }
 
     for test in NORMALIZATION_TESTS {

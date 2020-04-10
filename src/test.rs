@@ -8,11 +8,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-
-use std::char;
-use super::UnicodeNormalization;
 use super::char::is_combining_mark;
+use super::UnicodeNormalization;
+use core::char;
 
+#[cfg(not(feature = "std"))]
+use crate::no_std_prelude::*;
 
 #[test]
 fn test_nfd() {
@@ -21,8 +22,11 @@ fn test_nfd() {
             assert_eq!($input.nfd().to_string(), $expected);
             // A dummy iterator that is not std::str::Chars directly;
             // note that `id_func` is used to ensure `Clone` implementation
-            assert_eq!($input.chars().map(|c| c).nfd().collect::<String>(), $expected);
-        }
+            assert_eq!(
+                $input.chars().map(|c| c).nfd().collect::<String>(),
+                $expected
+            );
+        };
     }
     t!("abc", "abc");
     t!("\u{1e0b}\u{1c4}", "d\u{307}\u{1c4}");
@@ -41,7 +45,7 @@ fn test_nfkd() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
             assert_eq!($input.nfkd().to_string(), $expected);
-        }
+        };
     }
     t!("abc", "abc");
     t!("\u{1e0b}\u{1c4}", "d\u{307}DZ\u{30c}");
@@ -60,7 +64,7 @@ fn test_nfc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
             assert_eq!($input.nfc().to_string(), $expected);
-        }
+        };
     }
     t!("abc", "abc");
     t!("\u{1e0b}\u{1c4}", "\u{1e0b}\u{1c4}");
@@ -72,7 +76,10 @@ fn test_nfc() {
     t!("\u{301}a", "\u{301}a");
     t!("\u{d4db}", "\u{d4db}");
     t!("\u{ac1c}", "\u{ac1c}");
-    t!("a\u{300}\u{305}\u{315}\u{5ae}b", "\u{e0}\u{5ae}\u{305}\u{315}b");
+    t!(
+        "a\u{300}\u{305}\u{315}\u{5ae}b",
+        "\u{e0}\u{5ae}\u{305}\u{315}b"
+    );
 }
 
 #[test]
@@ -80,7 +87,7 @@ fn test_nfkc() {
     macro_rules! t {
         ($input: expr, $expected: expr) => {
             assert_eq!($input.nfkc().to_string(), $expected);
-        }
+        };
     }
     t!("abc", "abc");
     t!("\u{1e0b}\u{1c4}", "\u{1e0b}D\u{17d}");
@@ -92,7 +99,10 @@ fn test_nfkc() {
     t!("\u{301}a", "\u{301}a");
     t!("\u{d4db}", "\u{d4db}");
     t!("\u{ac1c}", "\u{ac1c}");
-    t!("a\u{300}\u{305}\u{315}\u{5ae}b", "\u{e0}\u{5ae}\u{305}\u{315}b");
+    t!(
+        "a\u{300}\u{305}\u{315}\u{5ae}b",
+        "\u{e0}\u{5ae}\u{305}\u{315}b"
+    );
 }
 
 #[test]
