@@ -71,6 +71,8 @@ mod perfect_hash;
 mod recompose;
 mod quick_check;
 mod stream_safe;
+
+#[rustfmt::skip]
 mod tables;
 
 #[cfg(test)]
