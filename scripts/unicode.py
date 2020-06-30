@@ -20,7 +20,7 @@
 import collections
 import urllib.request
 
-UNICODE_VERSION = "9.0.0"
+UNICODE_VERSION = "13.0.0"
 UCD_URL = "https://www.unicode.org/Public/%s/ucd/" % UNICODE_VERSION
 
 PREAMBLE = """// Copyright 2012-2018 The Rust Project Developers. See the COPYRIGHT
@@ -483,7 +483,7 @@ if __name__ == '__main__':
 
         version = "(%s, %s, %s)" % tuple(UNICODE_VERSION.split("."))
         out.write("#[allow(unused)]\n")
-        out.write("pub const UNICODE_VERSION: (u64, u64, u64) = %s;\n\n" % version)
+        out.write("pub const UNICODE_VERSION: (u8, u8, u8) = %s;\n\n" % version)
 
         gen_combining_class(data.combining_classes, out)
         out.write("\n")
