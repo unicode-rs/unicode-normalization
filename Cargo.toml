@@ -23,7 +23,7 @@ edition = "2018"
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "tests/*" ]
 
 [dependencies.tinyvec]
-version = "0.3.3"
+version = "0.4.0"
 features = ["alloc"]
 
 
