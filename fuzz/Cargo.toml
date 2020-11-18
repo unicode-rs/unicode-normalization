@@ -8,8 +8,8 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.3.2"
-unicode-normalization = "0.1.15"
+libfuzzer-sys = "0.3.4"
+unicode-normalization = { path = ".." }
 
 [[bin]]
 name = "unicode-normalization"
