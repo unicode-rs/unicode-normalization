@@ -1,5 +1,5 @@
 use unicode_normalization::{
-    char::canonical_combining_class, is_nfc, is_nfc_stream_safe, UnicodeNormalization,
+    is_nfc, is_nfc_stream_safe, UnicodeNormalization,
 };
 
 #[test]
