@@ -1,0 +1,21 @@
+[package]
+name = "unicode-normalization-fuzz"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.3.2"
+unicode-normalization = "0.1.15"
+
+[[bin]]
+name = "unicode-normalization"
+path = "fuzz_targets/unicode-normalization.rs"
+test = false
+doc = false
+
+# Work around https://github.com/rust-lang/cargo/issues/8338
+[workspace]
