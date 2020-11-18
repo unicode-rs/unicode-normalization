@@ -42,7 +42,7 @@ impl<I: Iterator<Item = char>> Iterator for StreamSafe<I> {
         let d = classify_nonstarters(next_ch);
         if self.nonstarter_count + d.leading_nonstarters > MAX_NONSTARTERS {
             self.buffer = Some(next_ch);
-            self.nonstarter_count = 0;
+            self.nonstarter_count += d.decomposition_len;
             return Some(COMBINING_GRAPHEME_JOINER);
         }
 
