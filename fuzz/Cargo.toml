@@ -17,5 +17,11 @@ path = "fuzz_targets/unicode-normalization.rs"
 test = false
 doc = false
 
+[[bin]]
+name = "streaming"
+path = "fuzz_targets/streaming.rs"
+test = false
+doc = false
+
 # Work around https://github.com/rust-lang/cargo/issues/8338
 [workspace]
