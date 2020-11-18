@@ -63,9 +63,11 @@ impl<I> Decompositions<I> {
 
         if class == 0 {
             self.sort_pending();
+            self.buffer.push((class, ch));
+            self.ready.end = self.buffer.len();
+        } else {
+            self.buffer.push((class, ch));
         }
-
-        self.buffer.push((class, ch));
     }
 
     #[inline]
@@ -73,7 +75,6 @@ impl<I> Decompositions<I> {
         // NB: `sort_by_key` is stable, so it will preserve the original text's
         // order within a combining class.
         self.buffer[self.ready.end..].sort_by_key(|k| k.0);
-        self.ready.end = self.buffer.len();
     }
 
     #[inline]
@@ -117,6 +118,7 @@ impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
                         return None;
                     } else {
                         self.sort_pending();
+                        self.ready.end = self.buffer.len();
 
                         // This implementation means that we can call `next`
                         // on an exhausted iterator; the last outer `next` call
