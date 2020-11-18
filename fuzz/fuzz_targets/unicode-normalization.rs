@@ -19,12 +19,18 @@ fn from_bool(is_normalized: bool) -> IsNormalized {
 
 fuzz_target!(|input: String| {
     // The full predicates imply the quick predicates.
-    assert!(is_nfc_quick(input.chars()) != from_bool(!is_nfc(&input)));
-    assert!(is_nfd_quick(input.chars()) != from_bool(!is_nfd(&input)));
-    assert!(is_nfkc_quick(input.chars()) != from_bool(!is_nfkc(&input)));
-    assert!(is_nfkd_quick(input.chars()) != from_bool(!is_nfkd(&input)));
-    assert!(is_nfc_stream_safe_quick(input.chars()) != from_bool(!is_nfc_stream_safe(&input)));
-    assert!(is_nfd_stream_safe_quick(input.chars()) != from_bool(!is_nfd_stream_safe(&input)));
+    assert_ne!(is_nfc_quick(input.chars()), from_bool(!is_nfc(&input)));
+    assert_ne!(is_nfd_quick(input.chars()), from_bool(!is_nfd(&input)));
+    assert_ne!(is_nfkc_quick(input.chars()), from_bool(!is_nfkc(&input)));
+    assert_ne!(is_nfkd_quick(input.chars()), from_bool(!is_nfkd(&input)));
+    assert_ne!(
+        is_nfc_stream_safe_quick(input.chars()),
+        from_bool(!is_nfc_stream_safe(&input))
+    );
+    assert_ne!(
+        is_nfd_stream_safe_quick(input.chars()),
+        from_bool(!is_nfd_stream_safe(&input))
+    );
 
     // Check NFC, NFD, NFKC, and NFKD normalization.
     let nfc = input.chars().nfc().collect::<String>();
