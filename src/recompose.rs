@@ -9,6 +9,7 @@
 // except according to those terms.
 
 use crate::decompose::Decompositions;
+use crate::normalize::never_composes;
 use core::fmt::{self, Write};
 use tinyvec::TinyVec;
 
@@ -65,7 +66,9 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                         let ch_class = super::char::canonical_combining_class(ch);
                         let k = match self.composee {
                             None => {
-                                if ch_class != 0 {
+                                // Nothing to compose with; if this isn't a starter or it
+                                // never composes, just return it immediately.
+                                if ch_class != 0 || never_composes(ch) {
                                     return Some(ch);
                                 }
                                 self.composee = Some(ch);
@@ -80,6 +83,15 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                                     continue;
                                 }
                                 None => {
+                                    // `ch` didn't compose with `composee`. If `ch` never composes,
+                                    // drain the buffer.
+                                    if never_composes(ch) {
+                                        self.state = Purging(0);
+                                        self.buffer.push(ch);
+                                        self.composee = None;
+                                        self.last_ccc = None;
+                                        return Some(k);
+                                    }
                                     if ch_class == 0 {
                                         self.composee = Some(ch);
                                         return Some(k);
@@ -90,7 +102,15 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                             },
                             Some(l_class) => {
                                 if l_class >= ch_class {
-                                    // `ch` is blocked from `composee`
+                                    // `ch` is blocked from `composee`. If `ch` never composes,
+                                    // drain the buffer.
+                                    if never_composes(ch) {
+                                        self.state = Purging(0);
+                                        self.buffer.push(ch);
+                                        self.composee = None;
+                                        self.last_ccc = None;
+                                        return Some(k);
+                                    }
                                     if ch_class == 0 {
                                         self.composee = Some(ch);
                                         self.last_ccc = None;
