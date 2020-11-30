@@ -105,7 +105,7 @@ pub(crate) fn classify_nonstarters(c: char) -> Decomposition {
 
 #[cfg(test)]
 mod tests {
-    use super::{COMBINING_GRAPHEME_JOINER, classify_nonstarters, StreamSafe};
+    use super::{classify_nonstarters, StreamSafe};
     use crate::lookups::canonical_combining_class;
     use crate::normalize::decompose_compatible;
 
@@ -135,11 +135,7 @@ mod tests {
     #[test]
     fn test_all_nonstarters() {
         let s = "\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}\u{0300}";
-
-        let first_block = "\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}";
-        let second_block = "\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}";
-        let expected = format!("{}{}{}", first_block, COMBINING_GRAPHEME_JOINER, second_block);
-
+        let expected = "\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{034F}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}\u{300}";
         assert_eq!(stream_safe(s), expected);
     }
 
