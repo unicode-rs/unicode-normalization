@@ -99,9 +99,15 @@ class UnicodeData(object):
                 self.combining_classes[char_int] = cc
 
             if decomp.startswith('<'):
-                self.compat_decomp[char_int] = [int(c, 16) for c in decomp.split()[1:]]
+                compat_decomp_parts = [int(c, 16) for c in decomp.split()[1:]]
+                for c in compat_decomp_parts:
+                    assert not never_composes(c)
+                self.compat_decomp[char_int] = compat_decomp_parts
             elif decomp != '':
-                self.canon_decomp[char_int] = [int(c, 16) for c in decomp.split()]
+                canon_decomp_parts = [int(c, 16) for c in decomp.split()]
+                for c in canon_decomp_parts:
+                    assert not never_composes(c)
+                self.canon_decomp[char_int] = canon_decomp_parts
 
             if category == 'M' or 'M' in expanded_categories.get(category, []):
                 self.general_category_mark.append(char_int)
@@ -472,6 +478,12 @@ def minimal_perfect_hash(d):
                 # significant slowdown.
                 exit(1)
     return (salts, keys)
+
+# We assume that `\n` and `\u{34f}` (CGJ) never compose, so we can
+# always flush the recomposition buffer immediately when we see
+# them. See `never_composes` in src/normalize.rs for details.
+def never_composes(c):
+    return c == 0xa or c == 0x34f
 
 if __name__ == '__main__':
     data = UnicodeData()
