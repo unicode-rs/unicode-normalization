@@ -1,5 +1,5 @@
 //! Test that the NFC iterator flushes its buffer immediately after seeting a
-//! '\n' or '\34f' (CGJ), as those characters never compose with anything.
+//! '\n' or '\u{34f}' (CGJ), as those characters never compose with anything.
 
 use unicode_normalization::UnicodeNormalization;
 
