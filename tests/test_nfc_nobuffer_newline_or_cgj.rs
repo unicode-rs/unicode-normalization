@@ -23,7 +23,7 @@ impl Iterator for Limited {
         assert!(self.i < self.stop, "next() called too many times");
         let result = self.data.get(self.i);
         self.i += 1;
-        result.cloned()
+        result.copied()
     }
 }
 
