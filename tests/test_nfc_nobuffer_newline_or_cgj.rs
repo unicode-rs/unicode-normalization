@@ -52,10 +52,10 @@ fn test_nfc_nobuffer_newline_after_combine() {
 #[test]
 fn test_nfc_nobuffer_newline_after_block() {
     let mut s = Limited::new(vec![',', ')', '\u{30f}', '\n', '\u{30f}'], 4).nfc();
-    s.next();
-    s.next();
-    s.next();
-    s.next();
+    assert_eq!(s.next(), Some(','));
+    assert_eq!(s.next(), Some(')'));
+    assert_eq!(s.next(), Some('\u{30f}'));
+    assert_eq!(s.next(), Some('\n'));
 }
 
 #[test]
@@ -83,8 +83,8 @@ fn test_nfc_nobuffer_cgj_after_combine() {
 #[test]
 fn test_nfc_nobuffer_cgj_after_block() {
     let mut s = Limited::new(vec![',', ')', '\u{30f}', '\u{34f}', '\u{30f}'], 4).nfc();
-    s.next();
-    s.next();
-    s.next();
-    s.next();
+    assert_eq!(s.next(), Some(','));
+    assert_eq!(s.next(), Some(')'));
+    assert_eq!(s.next(), Some('\u{30f}'));
+    assert_eq!(s.next(), Some('\u{34f}'));
 }
