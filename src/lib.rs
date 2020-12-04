@@ -59,6 +59,7 @@ pub use crate::quick_check::{
     IsNormalized,
 };
 pub use crate::recompose::Recompositions;
+pub use crate::replace::Replacements;
 pub use crate::stream_safe::StreamSafe;
 pub use crate::tables::UNICODE_VERSION;
 use core::str::Chars;
@@ -71,6 +72,7 @@ mod normalize;
 mod perfect_hash;
 mod quick_check;
 mod recompose;
+mod replace;
 mod stream_safe;
 
 #[rustfmt::skip]
@@ -84,8 +86,7 @@ mod test;
 /// Methods for composing and decomposing characters.
 pub mod char {
     pub use crate::normalize::{
-        compose, decompose_canonical, decompose_canonical_ext, decompose_compatible,
-        decompose_compatible_ext,
+        compose, decompose_canonical, decompose_compatible, decompose_svar,
     };
 
     pub use crate::lookups::{canonical_combining_class, is_combining_mark};
@@ -111,41 +112,16 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// (compatibility decomposition followed by canonical composition).
     fn nfkc(self) -> Recompositions<I>;
 
-    /// Similar to `nfd`, but with extensions which differ from the standard
-    /// decomposition algorithm and which don't have a stability guarantee,
-    /// but which still produce valid NFD and provide better results:
-    ///  - Standardized Variation Seqeuences are used to avoid losing
-    ///    information when normalizing "CJK Compatibility Ideographs"
-    ///    codepoints. Note that many systemes today ignore variation
-    ///    selectors, but the information is at least preserved in a
-    ///    standardized form.
+    /// A non-standard transformation which replaces select codepoints with
+    /// normal forms using Standardized Variation Sequences. These are
+    /// different than the standard decompositions, but they better preserve
+    /// the intent of the original text.
     ///
-    /// Additional extensions may be added in future versions.
-    ///
-    /// If you need to match the standard `toNFD` algorithm exactly, or you
-    /// need a stability guarantee, use `nfd` instead.
-    fn nfd_ext(self) -> Decompositions<I>;
-
-    /// Similar to `nfkd`, and the result is valid NFKD, but with the same
-    /// extensions as `nfd`.
-    ///
-    /// If you need to match the standard `toNFKD` algorithm exactly, or you
-    /// need a stability guarantee, use `nfd` instead.
-    fn nfkd_ext(self) -> Decompositions<I>;
-
-    /// Similar to `nfc`, and the result is valid NFC, but with the same
-    /// extensions as `nfd`.
-    ///
-    /// If you need to match the standard `toNFC` algorithm exactly, or you
-    /// need a stability guarantee, use `nfd` instead.
-    fn nfc_ext(self) -> Recompositions<I>;
-
-    /// Similar to `nfkc`, and the result is valid NFKC, but with the same
-    /// extensions as `nfd`.
-    ///
-    /// If you need to match the standard `toNFKC` algorithm exactly, or you
-    /// need a stability guarantee, use `nfd` instead.
-    fn nfkc_ext(self) -> Recompositions<I>;
+    /// Note that many systems today ignore variation selectors, so these
+    /// may not immediately help text display as intended, but they at
+    /// least preserve the information in a standardized form, giving
+    /// implementations the option to recognize them.
+    fn svar(self) -> Replacements<I>;
 
     /// An Iterator over the string with Conjoining Grapheme Joiner characters
     /// inserted according to the Stream-Safe Text Process (UAX15-D4)
@@ -174,23 +150,8 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     }
 
     #[inline]
-    fn nfd_ext(self) -> Decompositions<Chars<'a>> {
-        decompose::new_canonical_ext(self.chars())
-    }
-
-    #[inline]
-    fn nfkd_ext(self) -> Decompositions<Chars<'a>> {
-        decompose::new_compatible_ext(self.chars())
-    }
-
-    #[inline]
-    fn nfc_ext(self) -> Recompositions<Chars<'a>> {
-        recompose::new_canonical_ext(self.chars())
-    }
-
-    #[inline]
-    fn nfkc_ext(self) -> Recompositions<Chars<'a>> {
-        recompose::new_compatible_ext(self.chars())
+    fn svar(self) -> Replacements<Chars<'a>> {
+        replace::new_svar(self.chars())
     }
 
     #[inline]
@@ -221,23 +182,8 @@ impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     }
 
     #[inline]
-    fn nfd_ext(self) -> Decompositions<I> {
-        decompose::new_canonical_ext(self)
-    }
-
-    #[inline]
-    fn nfkd_ext(self) -> Decompositions<I> {
-        decompose::new_compatible_ext(self)
-    }
-
-    #[inline]
-    fn nfc_ext(self) -> Recompositions<I> {
-        recompose::new_canonical_ext(self)
-    }
-
-    #[inline]
-    fn nfkc_ext(self) -> Recompositions<I> {
-        recompose::new_compatible_ext(self)
+    fn svar(self) -> Replacements<I> {
+        replace::new_svar(self)
     }
 
     #[inline]

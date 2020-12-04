@@ -51,28 +51,6 @@ pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
     }
 }
 
-#[inline]
-pub fn new_canonical_ext<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
-    Recompositions {
-        iter: super::decompose::new_canonical_ext(iter),
-        state: self::RecompositionState::Composing,
-        buffer: TinyVec::new(),
-        composee: None,
-        last_ccc: None,
-    }
-}
-
-#[inline]
-pub fn new_compatible_ext<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
-    Recompositions {
-        iter: super::decompose::new_compatible_ext(iter),
-        state: self::RecompositionState::Composing,
-        buffer: TinyVec::new(),
-        composee: None,
-        last_ccc: None,
-    }
-}
-
 impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
     type Item = char;
 

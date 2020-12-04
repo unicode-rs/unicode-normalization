@@ -72,8 +72,8 @@ class UnicodeData(object):
         self.canon_comp = self._compute_canonical_comp()
         self.canon_fully_decomp, self.compat_fully_decomp = self._compute_fully_decomposed()
 
-        self.ext_decomp = {}
-        self.ext_fully_decomp = {}
+        self.svar_decomp = {}
+        self.svar_fully_decomp = {}
         self._load_standardized_variants()
 
         def stats(name, table):
@@ -82,11 +82,11 @@ class UnicodeData(object):
 
         print("Decomposition table stats:")
         stats("Canonical decomp", self.canon_decomp)
-        stats("Canonical decomp with extensions", self.ext_decomp)
         stats("Compatible decomp", self.compat_decomp)
+        stats("Standardized Variants", self.svar_decomp)
         stats("Canonical fully decomp", self.canon_fully_decomp)
-        stats("Canonical fully decomp with extensions", self.ext_fully_decomp)
         stats("Compatible fully decomp", self.compat_fully_decomp)
+        stats("Standardized Variants", self.svar_fully_decomp)
 
         self.ss_leading, self.ss_trailing = self._compute_stream_safe_tables()
 
@@ -152,8 +152,8 @@ class UnicodeData(object):
                     #assert not never_composes(c) TODO: Re-enable this once #67 lands.
                     assert not c in self.canon_decomp, "Unexpected: standardized variant is unnormalized (canon)"
                     assert not c in self.compat_decomp, "Unexpected: standardized variant is unnormalized (compat)"
-                self.ext_decomp[char_int] = standardized_variant_parts
-                self.ext_fully_decomp[char_int] = standardized_variant_parts
+                self.svar_decomp[char_int] = standardized_variant_parts
+                self.svar_fully_decomp[char_int] = standardized_variant_parts
 
     def _load_norm_props(self):
         props = collections.defaultdict(list)
@@ -364,8 +364,8 @@ def gen_composition_table(canon_comp, out):
     out.write("    }\n")
     out.write("}\n")
 
-def gen_decomposition_tables(canon_decomp, ext_decomp, compat_decomp, out):
-    tables = [(canon_decomp, 'canonical'), (ext_decomp, 'ext'), (compat_decomp, 'compatibility')]
+def gen_decomposition_tables(canon_decomp, compat_decomp, svar_decomp, out):
+    tables = [(canon_decomp, 'canonical'), (compat_decomp, 'compatibility'), (svar_decomp, 'svar')]
     for table, name in tables:
         gen_mph_data(name + '_decomposed', table, "(u32, &'static [char])",
             lambda k: "(0x{:x}, &[{}])".format(k,
@@ -535,7 +535,7 @@ if __name__ == '__main__':
         gen_composition_table(data.canon_comp, out)
         out.write("\n")
 
-        gen_decomposition_tables(data.canon_fully_decomp, data.ext_fully_decomp, data.compat_fully_decomp, out)
+        gen_decomposition_tables(data.canon_fully_decomp, data.compat_fully_decomp, data.svar_fully_decomp, out)
 
         gen_combining_mark(data.general_category_mark, out)
         out.write("\n")
