@@ -16,6 +16,8 @@ use tinyvec::TinyVec;
 enum DecompositionType {
     Canonical,
     Compatible,
+    CanonicalExt,
+    CompatibleExt,
 }
 
 /// External iterator for a string decomposition's characters.
@@ -50,6 +52,26 @@ pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
 pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
+        iter: iter.fuse(),
+        buffer: TinyVec::new(),
+        ready: 0..0,
+    }
+}
+
+#[inline]
+pub fn new_canonical_ext<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
+    Decompositions {
+        kind: self::DecompositionType::CanonicalExt,
+        iter: iter.fuse(),
+        buffer: TinyVec::new(),
+        ready: 0..0,
+    }
+}
+
+#[inline]
+pub fn new_compatible_ext<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
+    Decompositions {
+        kind: self::DecompositionType::CompatibleExt,
         iter: iter.fuse(),
         buffer: TinyVec::new(),
         ready: 0..0,
@@ -112,6 +134,12 @@ impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
                 }
                 (Some(ch), &DecompositionType::Compatible) => {
                     super::char::decompose_compatible(ch, |d| self.push_back(d));
+                }
+                (Some(ch), &DecompositionType::CanonicalExt) => {
+                    super::char::decompose_canonical_ext(ch, |d| self.push_back(d));
+                }
+                (Some(ch), &DecompositionType::CompatibleExt) => {
+                    super::char::decompose_compatible_ext(ch, |d| self.push_back(d));
                 }
                 (None, _) => {
                     if self.buffer.is_empty() {

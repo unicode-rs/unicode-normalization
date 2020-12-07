@@ -11,6 +11,7 @@
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
 use crate::lookups::{
     canonical_fully_decomposed, compatibility_fully_decomposed, composition_table,
+    ext_fully_decomposed,
 };
 
 use core::{char, ops::FnMut};
@@ -33,6 +34,37 @@ where
 pub fn decompose_compatible<F: FnMut(char)>(c: char, emit_char: F) {
     let decompose_char =
         |c| compatibility_fully_decomposed(c).or_else(|| canonical_fully_decomposed(c));
+    decompose(c, decompose_char, emit_char)
+}
+
+/// Compute "extended" canonical Unicode decomposition for character.
+///
+/// This is `decompose_canonical` plus extensions, which currently consist of:
+///  - [Standardized Variation Sequences] are used instead of the standard canonical
+///    decompositions for CJK codepoints with singleton canonical decompositions, to
+///    avoid losing information. See the
+///    [Unicode Variation Sequence FAQ](http://unicode.org/faq/vs.html) and the
+///    "Other Enhancements" section of the
+///    [Unicode 6.3 Release Summary](https://www.unicode.org/versions/Unicode6.3.0/#Summary)
+///    for more information.
+#[inline]
+pub fn decompose_canonical_ext<F>(c: char, emit_char: F)
+where
+    F: FnMut(char),
+{
+    let decompose_char = |c| ext_fully_decomposed(c).or_else(|| canonical_fully_decomposed(c));
+    decompose(c, decompose_char, emit_char)
+}
+
+/// Compute "extended" compatible Unicode decomposition for character.
+///
+/// This is `decompose_compatible` plus the same extensions as `decompose_canonical_ext`.
+#[inline]
+pub fn decompose_compatible_ext<F: FnMut(char)>(c: char, emit_char: F) {
+    let decompose_char = |c| {
+        ext_fully_decomposed(c)
+            .or_else(|| compatibility_fully_decomposed(c).or_else(|| canonical_fully_decomposed(c)))
+    };
     decompose(c, decompose_char, emit_char)
 }
 

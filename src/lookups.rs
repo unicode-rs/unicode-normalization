@@ -53,6 +53,17 @@ pub(crate) fn canonical_fully_decomposed(c: char) -> Option<&'static [char]> {
     )
 }
 
+pub(crate) fn ext_fully_decomposed(c: char) -> Option<&'static [char]> {
+    mph_lookup(
+        c.into(),
+        EXT_DECOMPOSED_SALT,
+        EXT_DECOMPOSED_KV,
+        pair_lookup_fk,
+        pair_lookup_fv_opt,
+        None,
+    )
+}
+
 pub(crate) fn compatibility_fully_decomposed(c: char) -> Option<&'static [char]> {
     mph_lookup(
         c.into(),
