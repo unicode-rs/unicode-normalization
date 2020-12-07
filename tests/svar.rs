@@ -66,3 +66,12 @@ fn test_standardized_variations_for_cjk_singleton_decompositions() {
     assert_eq!(svar_nfkd_iter.next(), Some('\u{fe00}'));
     assert_eq!(svar_nfkd_iter.next(), None);
 }
+
+/// `svar` shouldn't decompose Hangul.
+#[test]
+fn test_svar_hangul() {
+    assert_eq!(
+        "중국어 (홍콩)".chars().svar().collect::<String>(),
+        "중국어 (홍콩)"
+    );
+}

@@ -47,11 +47,27 @@ pub fn decompose_compatible<F: FnMut(char)>(c: char, emit_char: F) {
 /// [Unicode 6.3 Release Summary](https://www.unicode.org/versions/Unicode6.3.0/#Summary)
 /// for more information.
 #[inline]
-pub fn decompose_svar<F>(c: char, emit_char: F)
+pub fn decompose_svar<F>(c: char, mut emit_char: F)
 where
     F: FnMut(char),
 {
-    decompose(c, svar_fully_decomposed, emit_char)
+    // 7-bit ASCII never decomposes
+    if c <= '\x7f' {
+        emit_char(c);
+        return;
+    }
+
+    // Don't perform decomposition for Hangul
+
+    if let Some(decomposed) = svar_fully_decomposed(c) {
+        for &d in decomposed {
+            emit_char(d);
+        }
+        return;
+    }
+
+    // Finally bottom out.
+    emit_char(c);
 }
 
 #[inline]
