@@ -23325,3 +23325,9 @@ pub(crate) const TRAILING_NONSTARTERS_KV: &[u32] = &[
 ];
 
 
+#[inline]
+pub(crate) fn assume_never_composes(c: char) -> bool {
+    false || c == '\u{34f}' || c == '\u{a}'
+}
+
+

@@ -38,6 +38,20 @@ PREAMBLE = """// Copyright 2012-2018 The Rust Project Developers. See the COPYRI
 #![allow(missing_docs)]
 """
 
+# A set of codepoints that we assume will never compose with anything, so
+# recomposition can drain its buffer when it sees them.
+#
+# `\n` is handled specially in a wide variety of applications, for purposes
+# such as splitting text into lines, and often by logic that does not perform
+# normalization. If `\n` ever composed with anything that followed it, it
+# would surely break in a large number of applications.
+#
+# U+34F is the confusingly-named COMBINING GRAPHEME JOINER, which is used by
+# Unicode's Stream-Safe algorithm specifically as a way to prevent otherwise
+# adjacent codepoints from composing, so it's very unlikely to be repurposed
+# for composing itself.
+ASSUMED_NEVER_COMPOSES = {u'\n', u'\u034f'}
+
 NormalizationTest = collections.namedtuple(
     "NormalizationTest",
     ["source", "nfc", "nfd", "nfkc", "nfkd"],
@@ -100,13 +114,11 @@ class UnicodeData(object):
 
             if decomp.startswith('<'):
                 compat_decomp_parts = [int(c, 16) for c in decomp.split()[1:]]
-                for c in compat_decomp_parts:
-                    assert not never_composes(c)
+                assert not ASSUMED_NEVER_COMPOSES & set(compat_decomp_parts)
                 self.compat_decomp[char_int] = compat_decomp_parts
             elif decomp != '':
                 canon_decomp_parts = [int(c, 16) for c in decomp.split()]
-                for c in canon_decomp_parts:
-                    assert not never_composes(c)
+                assert not ASSUMED_NEVER_COMPOSES & set(canon_decomp_parts)
                 self.canon_decomp[char_int] = canon_decomp_parts
 
             if category == 'M' or 'M' in expanded_categories.get(category, []):
@@ -397,6 +409,16 @@ def gen_stream_safe(leading, trailing, out):
     gen_mph_data('trailing_nonstarters', trailing, 'u32',
         lambda k: "0x{:X}".format(int(trailing[k]) | (k << 8)))
 
+def gen_assume_never_composes(out):
+    out.write("#[inline]\n")
+    out.write("pub(crate) fn assume_never_composes(c: char) -> bool {\n")
+    out.write("    false")
+    for ch in ASSUMED_NEVER_COMPOSES:
+        out.write(" || c == '\\u{%x}'" % ord(ch))
+    out.write("\n")
+    out.write("}\n")
+    out.write("\n")
+
 def gen_tests(tests, out):
     out.write("""#[derive(Debug)]
 pub struct NormalizationTest {
@@ -479,12 +501,6 @@ def minimal_perfect_hash(d):
                 exit(1)
     return (salts, keys)
 
-# We assume that `\n` and `\u{34f}` (CGJ) never compose, so we can
-# always flush the recomposition buffer immediately when we see
-# them. See `never_composes` in src/normalize.rs for details.
-def never_composes(c):
-    return c == 0xa or c == 0x34f
-
 if __name__ == '__main__':
     data = UnicodeData()
     with open("tables.rs", "w", newline = "\n") as out:
@@ -521,6 +537,9 @@ if __name__ == '__main__':
         out.write("\n")
 
         gen_stream_safe(data.ss_leading, data.ss_trailing, out)
+        out.write("\n")
+
+        gen_assume_never_composes(out)
         out.write("\n")
 
     with open("normalization_tests.rs", "w", newline = "\n") as out:

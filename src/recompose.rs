@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use crate::decompose::Decompositions;
-use crate::normalize::never_composes;
+use crate::tables::assume_never_composes;
 use core::fmt::{self, Write};
 use tinyvec::TinyVec;
 
@@ -68,7 +68,7 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                             None => {
                                 // Nothing to compose with; if this isn't a starter or it
                                 // never composes, just return it immediately.
-                                if ch_class != 0 || never_composes(ch) {
+                                if ch_class != 0 || assume_never_composes(ch) {
                                     return Some(ch);
                                 }
                                 self.composee = Some(ch);
@@ -85,7 +85,7 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                                 None => {
                                     // `ch` didn't compose with `composee`. If `ch` never composes,
                                     // drain the buffer.
-                                    if never_composes(ch) {
+                                    if assume_never_composes(ch) {
                                         self.state = Purging(0);
                                         self.buffer.push(ch);
                                         self.composee = None;
@@ -104,7 +104,7 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
                                 if l_class >= ch_class {
                                     // `ch` is blocked from `composee`. If `ch` never composes,
                                     // drain the buffer.
-                                    if never_composes(ch) {
+                                    if assume_never_composes(ch) {
                                         self.state = Purging(0);
                                         self.buffer.push(ch);
                                         self.composee = None;

@@ -72,15 +72,6 @@ pub fn compose(a: char, b: char) -> Option<char> {
     compose_hangul(a, b).or_else(|| composition_table(a, b))
 }
 
-/// Is the given `char` known to never compose with anything else?
-#[inline]
-pub(crate) fn never_composes(ch: char) -> bool {
-    // '\n' and U+34F (CGJ) are particularly useful codepoints that are known
-    // to never compose with anything, and recomposition should drain its
-    // buffer when it sees them.
-    ch == '\n' || ch == '\u{34f}'
-}
-
 // Constants from Unicode 9.0.0 Section 3.12 Conjoining Jamo Behavior
 // http://www.unicode.org/versions/Unicode9.0.0/ch03.pdf#M9.32468.Heading.310.Combining.Jamo.Behavior
 const S_BASE: u32 = 0xAC00;
