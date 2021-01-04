@@ -112,9 +112,10 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// (compatibility decomposition followed by canonical composition).
     fn nfkc(self) -> Recompositions<I>;
 
-    /// A non-standard transformation which replaces select codepoints with
-    /// normal forms using Standardized Variation Sequences. These are
-    /// different than the standard decompositions, but they better preserve
+    /// A transformation which replaces codepoints with normal forms using
+    /// Standardized Variation Sequences. This is not part of the canonical
+    /// or compatibility decomposition algorithms, but performing it before
+    /// those algorithms produces normalized output which better preserves
     /// the intent of the original text.
     ///
     /// Note that many systems today ignore variation selectors, so these
