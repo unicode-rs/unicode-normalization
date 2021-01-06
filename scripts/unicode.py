@@ -72,7 +72,6 @@ class UnicodeData(object):
         self.canon_comp = self._compute_canonical_comp()
         self.canon_fully_decomp, self.compat_fully_decomp = self._compute_fully_decomposed()
 
-        self.cjk_compat_variants_decomp = {}
         self.cjk_compat_variants_fully_decomp = {}
         self._load_cjk_compat_ideograph_variants()
 
@@ -83,10 +82,9 @@ class UnicodeData(object):
         print("Decomposition table stats:")
         stats("Canonical decomp", self.canon_decomp)
         stats("Compatible decomp", self.compat_decomp)
-        stats("CJK Compat Variants", self.cjk_compat_variants_decomp)
         stats("Canonical fully decomp", self.canon_fully_decomp)
         stats("Compatible fully decomp", self.compat_fully_decomp)
-        stats("CJK Compat Variants", self.cjk_compat_variants_fully_decomp)
+        stats("CJK Compat Variants fully decomp", self.cjk_compat_variants_fully_decomp)
 
         self.ss_leading, self.ss_trailing = self._compute_stream_safe_tables()
 
@@ -155,7 +153,6 @@ class UnicodeData(object):
             for c in cjk_compat_variant_parts:
                 assert not c in self.canon_decomp, "Unexpected: CJK compat variant is unnormalized (canon)"
                 assert not c in self.compat_decomp, "Unexpected: CJK compat variant is unnormalized (compat)"
-            self.cjk_compat_variants_decomp[char_int] = cjk_compat_variant_parts
             self.cjk_compat_variants_fully_decomp[char_int] = cjk_compat_variant_parts
 
     def _load_norm_props(self):
