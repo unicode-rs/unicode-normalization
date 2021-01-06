@@ -72,9 +72,9 @@ class UnicodeData(object):
         self.canon_comp = self._compute_canonical_comp()
         self.canon_fully_decomp, self.compat_fully_decomp = self._compute_fully_decomposed()
 
-        self.svar_decomp = {}
-        self.svar_fully_decomp = {}
-        self._load_standardized_variants()
+        self.cjk_compat_variants_decomp = {}
+        self.cjk_compat_variants_fully_decomp = {}
+        self._load_cjk_compat_ideograph_variants()
 
         def stats(name, table):
             count = sum(len(v) for v in table.values())
@@ -83,10 +83,10 @@ class UnicodeData(object):
         print("Decomposition table stats:")
         stats("Canonical decomp", self.canon_decomp)
         stats("Compatible decomp", self.compat_decomp)
-        stats("Standardized Variants", self.svar_decomp)
+        stats("CJK Compat Variants", self.cjk_compat_variants_decomp)
         stats("Canonical fully decomp", self.canon_fully_decomp)
         stats("Compatible fully decomp", self.compat_fully_decomp)
-        stats("Standardized Variants", self.svar_fully_decomp)
+        stats("CJK Compat Variants", self.cjk_compat_variants_fully_decomp)
 
         self.ss_leading, self.ss_trailing = self._compute_stream_safe_tables()
 
@@ -122,38 +122,41 @@ class UnicodeData(object):
             if category == 'M' or 'M' in expanded_categories.get(category, []):
                 self.general_category_mark.append(char_int)
 
-    def _load_standardized_variants(self):
+    def _load_cjk_compat_ideograph_variants(self):
         for line in self._fetch("StandardizedVariants.txt").splitlines():
             strip_comments = line.split('#', 1)[0].strip()
             if not strip_comments:
                 continue
 
-            pieces = strip_comments.split(';')
-            assert len(pieces) == 3
-
-            variation_sequence, description, differences = pieces[0], pieces[1].strip(), pieces[2]
+            variation_sequence, description, differences = strip_comments.split(';')
+            description = description.strip()
 
             # Don't use variations that only apply in particular shaping environments.
             if differences:
                 continue
 
             # Look for entries where the description field is a codepoint name.
-            if description in self.name_to_char_int:
-                char_int = self.name_to_char_int[description]
+            if description not in self.name_to_char_int:
+                continue
 
-                assert not char_int in self.combining_classes, "Unexpected: standardized variant with a combining class"
-                assert not char_int in self.compat_decomp, "Unexpected: standardized variant and compatibility decomposition"
-                assert len(self.canon_decomp[char_int]) == 1, "Unexpected: standardized variant and non-singleton canonical decomposition"
-                # If we ever need to handle Hangul here, we'll need to handle it separately.
-                assert not (S_BASE <= char_int < S_BASE + S_COUNT)
+            # Only consider the CJK Compatibility Ideographs.
+            if not description.startswith('CJK COMPATIBILITY IDEOGRAPH-'):
+                continue
 
-                standardized_variant_parts = [int(c, 16) for c in variation_sequence.split()]
-                for c in standardized_variant_parts:
-                    #assert not never_composes(c) TODO: Re-enable this once #67 lands.
-                    assert not c in self.canon_decomp, "Unexpected: standardized variant is unnormalized (canon)"
-                    assert not c in self.compat_decomp, "Unexpected: standardized variant is unnormalized (compat)"
-                self.svar_decomp[char_int] = standardized_variant_parts
-                self.svar_fully_decomp[char_int] = standardized_variant_parts
+            char_int = self.name_to_char_int[description]
+
+            assert not char_int in self.combining_classes, "Unexpected: CJK compat variant with a combining class"
+            assert not char_int in self.compat_decomp, "Unexpected: CJK compat variant and compatibility decomposition"
+            assert len(self.canon_decomp[char_int]) == 1, "Unexpected: CJK compat variant and non-singleton canonical decomposition"
+            # If we ever need to handle Hangul here, we'll need to handle it separately.
+            assert not (S_BASE <= char_int < S_BASE + S_COUNT)
+
+            cjk_compat_variant_parts = [int(c, 16) for c in variation_sequence.split()]
+            for c in cjk_compat_variant_parts:
+                assert not c in self.canon_decomp, "Unexpected: CJK compat variant is unnormalized (canon)"
+                assert not c in self.compat_decomp, "Unexpected: CJK compat variant is unnormalized (compat)"
+            self.cjk_compat_variants_decomp[char_int] = cjk_compat_variant_parts
+            self.cjk_compat_variants_fully_decomp[char_int] = cjk_compat_variant_parts
 
     def _load_norm_props(self):
         props = collections.defaultdict(list)
@@ -364,8 +367,8 @@ def gen_composition_table(canon_comp, out):
     out.write("    }\n")
     out.write("}\n")
 
-def gen_decomposition_tables(canon_decomp, compat_decomp, svar_decomp, out):
-    tables = [(canon_decomp, 'canonical'), (compat_decomp, 'compatibility'), (svar_decomp, 'svar')]
+def gen_decomposition_tables(canon_decomp, compat_decomp, cjk_compat_variants_decomp, out):
+    tables = [(canon_decomp, 'canonical'), (compat_decomp, 'compatibility'), (cjk_compat_variants_decomp, 'cjk_compat_variants')]
     for table, name in tables:
         gen_mph_data(name + '_decomposed', table, "(u32, &'static [char])",
             lambda k: "(0x{:x}, &[{}])".format(k,
@@ -535,7 +538,7 @@ if __name__ == '__main__':
         gen_composition_table(data.canon_comp, out)
         out.write("\n")
 
-        gen_decomposition_tables(data.canon_fully_decomp, data.compat_fully_decomp, data.svar_fully_decomp, out)
+        gen_decomposition_tables(data.canon_fully_decomp, data.compat_fully_decomp, data.cjk_compat_variants_fully_decomp, out)
 
         gen_combining_mark(data.general_category_mark, out)
         out.write("\n")

@@ -64,11 +64,11 @@ pub(crate) fn compatibility_fully_decomposed(c: char) -> Option<&'static [char]>
     )
 }
 
-pub(crate) fn svar_fully_decomposed(c: char) -> Option<&'static [char]> {
+pub(crate) fn cjk_compat_variants_fully_decomposed(c: char) -> Option<&'static [char]> {
     mph_lookup(
         c.into(),
-        SVAR_DECOMPOSED_SALT,
-        SVAR_DECOMPOSED_KV,
+        CJK_COMPAT_VARIANTS_DECOMPOSED_SALT,
+        CJK_COMPAT_VARIANTS_DECOMPOSED_KV,
         pair_lookup_fk,
         pair_lookup_fv_opt,
         None,

@@ -10,8 +10,8 @@
 
 //! Functions for computing canonical and compatible decompositions for Unicode characters.
 use crate::lookups::{
-    canonical_fully_decomposed, compatibility_fully_decomposed, composition_table,
-    svar_fully_decomposed,
+    canonical_fully_decomposed, cjk_compat_variants_fully_decomposed,
+    compatibility_fully_decomposed, composition_table,
 };
 
 use core::{char, ops::FnMut};
@@ -47,7 +47,7 @@ pub fn decompose_compatible<F: FnMut(char)>(c: char, emit_char: F) {
 /// [Unicode 6.3 Release Summary](https://www.unicode.org/versions/Unicode6.3.0/#Summary)
 /// for more information.
 #[inline]
-pub fn decompose_svar<F>(c: char, mut emit_char: F)
+pub fn decompose_cjk_compat_variants<F>(c: char, mut emit_char: F)
 where
     F: FnMut(char),
 {
@@ -59,7 +59,7 @@ where
 
     // Don't perform decomposition for Hangul
 
-    if let Some(decomposed) = svar_fully_decomposed(c) {
+    if let Some(decomposed) = cjk_compat_variants_fully_decomposed(c) {
         for &d in decomposed {
             emit_char(d);
         }

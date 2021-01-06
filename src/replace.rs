@@ -20,7 +20,7 @@ pub struct Replacements<I> {
 }
 
 #[inline]
-pub fn new_svar<I: Iterator<Item = char>>(iter: I) -> Replacements<I> {
+pub fn new_cjk_compat_variants<I: Iterator<Item = char>>(iter: I) -> Replacements<I> {
     Replacements { iter, buffer: None }
 }
 
@@ -37,7 +37,7 @@ impl<I: Iterator<Item = char>> Iterator for Replacements<I> {
             Some(ch) => {
                 // At this time, the longest replacement sequence has length 2.
                 let mut buffer = TinyVec::<[char; 2]>::new();
-                super::char::decompose_svar(ch, |d| buffer.push(d));
+                super::char::decompose_cjk_compat_variants(ch, |d| buffer.push(d));
                 self.buffer = buffer.get(1).copied();
                 Some(buffer[0])
             }

@@ -15161,7 +15161,7 @@ pub(crate) const COMPATIBILITY_DECOMPOSED_KV: &[(u32, &'static [char])] = &[
     (0x2106, &['\u{0063}', '\u{002F}', '\u{0075}']),
 ];
 
-pub(crate) const SVAR_DECOMPOSED_SALT: &[u16] = &[
+pub(crate) const CJK_COMPAT_VARIANTS_DECOMPOSED_SALT: &[u16] = &[
     0x5,
     0x0,
     0x0,
@@ -16165,7 +16165,7 @@ pub(crate) const SVAR_DECOMPOSED_SALT: &[u16] = &[
     0x5,
     0x1,
 ];
-pub(crate) const SVAR_DECOMPOSED_KV: &[(u32, &'static [char])] = &[
+pub(crate) const CJK_COMPAT_VARIANTS_DECOMPOSED_KV: &[(u32, &'static [char])] = &[
     (0xfa08, &['\u{884C}', '\u{FE00}']),
     (0x2f825, &['\u{52C7}', '\u{FE01}']),
     (0x2f838, &['\u{20B63}', '\u{FE00}']),
