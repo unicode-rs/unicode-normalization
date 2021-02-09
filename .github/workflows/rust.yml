@@ -34,6 +34,6 @@ jobs:
     - name: Package
       run: cargo package
     - name: Test package
-      run: cd target/package/unicode-normalization-* && cargo test
+      run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test
     - name: Test package without features
-      run: cd target/package/unicode-normalization-* && cargo test --no-default-features
+      run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test --no-default-features
