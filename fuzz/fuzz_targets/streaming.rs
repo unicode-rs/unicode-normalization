@@ -16,7 +16,7 @@ extern crate libfuzzer_sys;
 use std::str::Chars;
 use std::cell::RefCell;
 use std::rc::Rc;
-use unicode_normalization::UnicodeNormalization;
+use unicode_normalization::{char::canonical_combining_class, UnicodeNormalization};
 
 const MAX_NONSTARTERS: u32 = 30;
 
@@ -30,8 +30,13 @@ impl<'a> Iterator for Counter<'a> {
     type Item = char;
 
     fn next(&mut self) -> Option<char> {
-        *self.value.borrow_mut() += 1;
-        self.iter.next()
+        let next = self.iter.next();
+        if let Some(c) = next {
+            if canonical_combining_class(c) != 0 {
+                *self.value.borrow_mut() += 1;
+            }
+        }
+        next
     }
 }
 
@@ -41,9 +46,8 @@ fuzz_target!(|input: String| {
     let mut value = Rc::new(RefCell::new(0));
     let counter = Counter { iter: stream_safe.chars(), value: Rc::clone(&mut value) };
     for _ in counter.nfc() {
-        // Plus 2: one for the starter at the beginning of a sequence, and
-        // one for a starter that begins the following sequence.
-        assert!(*value.borrow() <= MAX_NONSTARTERS + 2);
+        // Plus 1: The iterator may consume a starter that begins the next sequence.
+        assert!(*value.borrow() <= MAX_NONSTARTERS + 1);
         *value.borrow_mut() = 0;
     }
 });
