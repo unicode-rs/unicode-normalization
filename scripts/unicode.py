@@ -102,12 +102,13 @@ class UnicodeData(object):
 
         assigned_start = 0;
         prev_char_int = -1;
+        prev_name = "";
 
         for line in self._fetch("UnicodeData.txt").splitlines():
             # See ftp://ftp.unicode.org/Public/3.0-Update/UnicodeData-3.0.0.html
             pieces = line.split(';')
             assert len(pieces) == 15
-            char, category, cc, decomp = pieces[0], pieces[2], pieces[3], pieces[5]
+            char, name, category, cc, decomp = pieces[0], pieces[1], pieces[2], pieces[3], pieces[5]
             char_int = int(char, 16)
 
             name = pieces[1].strip()
@@ -126,10 +127,11 @@ class UnicodeData(object):
 
             assert category != 'Cn', "Unexpected: Unassigned codepoint in UnicodeData.txt"
             if category not in ['Co', 'Cs']:
-                if char_int != prev_char_int + 1:
+                if char_int != prev_char_int + 1 and not is_first_and_last(prev_name, name):
                     self.general_category_public_assigned.append((assigned_start, prev_char_int))
                     assigned_start = char_int
                 prev_char_int = char_int
+                prev_name = name;
 
         self.general_category_public_assigned.append((assigned_start, prev_char_int))
 
@@ -342,6 +344,15 @@ class UnicodeData(object):
         return leading_nonstarters, trailing_nonstarters
 
 hexify = lambda c: '{:04X}'.format(c)
+
+# Test whether `first` and `last` are corresponding "<..., First>" and
+# "<..., Last>" markers.
+def is_first_and_last(first, last):
+    if not first.startswith('<') or not first.endswith(', First>'):
+        return False
+    if not last.startswith('<') or not last.endswith(', Last>'):
+        return False
+    return first[1:-8] == last[1:-7]
 
 def gen_mph_data(name, d, kv_type, kv_callback):
     (salt, keys) = minimal_perfect_hash(d)
