@@ -98,6 +98,10 @@ class UnicodeData(object):
         self.compat_decomp = {}
         self.canon_decomp = {}
         self.general_category_mark = []
+        self.general_category_public_assigned = []
+
+        assigned_start = 0;
+        prev_char_int = -1;
 
         for line in self._fetch("UnicodeData.txt").splitlines():
             # See ftp://ftp.unicode.org/Public/3.0-Update/UnicodeData-3.0.0.html
@@ -119,6 +123,15 @@ class UnicodeData(object):
 
             if category == 'M' or 'M' in expanded_categories.get(category, []):
                 self.general_category_mark.append(char_int)
+
+            assert category != 'Cn', "Unexpected: Unassigned codepoint in UnicodeData.txt"
+            if category not in ['Co', 'Cs']:
+                if char_int != prev_char_int + 1:
+                    self.general_category_public_assigned.append((assigned_start, prev_char_int))
+                    assigned_start = char_int
+                prev_char_int = char_int
+
+        self.general_category_public_assigned.append((assigned_start, prev_char_int))
 
     def _load_cjk_compat_ideograph_variants(self):
         for line in self._fetch("StandardizedVariants.txt").splitlines():
@@ -418,6 +431,30 @@ def gen_combining_mark(general_category_mark, out):
     gen_mph_data('combining_mark', general_category_mark, 'u32',
         lambda k: '0x{:04x}'.format(k))
 
+def gen_public_assigned(general_category_public_assigned, out):
+    # This could be done as a hash but the table is somewhat small.
+    out.write("#[inline]\n")
+    out.write("pub fn is_public_assigned(c: char) -> bool {\n")
+    out.write("    match c {\n")
+
+    start = True
+    for first, last in general_category_public_assigned:
+        if start:
+            out.write("        ")
+            start = False
+        else:
+            out.write("        | ")
+        if first == last:
+            out.write("'\\u{%s}'\n" % hexify(first))
+        else:
+            out.write("'\\u{%s}'..='\\u{%s}'\n" % (hexify(first), hexify(last)))
+    out.write("        => true,\n")
+
+    out.write("        _ => false,\n")
+    out.write("    }\n")
+    out.write("}\n")
+    out.write("\n")
+
 def gen_stream_safe(leading, trailing, out):
     # This could be done as a hash but the table is very small.
     out.write("#[inline]\n")
@@ -538,6 +575,9 @@ if __name__ == '__main__':
         gen_decomposition_tables(data.canon_fully_decomp, data.compat_fully_decomp, data.cjk_compat_variants_fully_decomp, out)
 
         gen_combining_mark(data.general_category_mark, out)
+        out.write("\n")
+
+        gen_public_assigned(data.general_category_public_assigned, out)
         out.write("\n")
 
         gen_nfc_qc(data.norm_props, out)
