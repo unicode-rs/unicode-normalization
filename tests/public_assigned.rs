@@ -71,4 +71,51 @@ fn test_public_assigned() {
     assert!(!is_public_assigned('\u{fffff}'));
     assert!(!is_public_assigned('\u{10fffe}'));
     assert!(!is_public_assigned('\u{10ffff}'));
+
+    // Several ranges are defined by "<..., First>" and "<..., Last>" pairs in
+    // UnicodeData.txt:
+
+    // CJK Ideograph Extension A
+    assert!(is_public_assigned('\u{3400}'));
+    assert!(is_public_assigned('\u{4dbf}'));
+
+    // CJK Ideograph
+    assert!(is_public_assigned('\u{4e00}'));
+    assert!(is_public_assigned('\u{9ffc}'));
+
+    // Hangul Syllable
+    assert!(is_public_assigned('\u{ac00}'));
+    assert!(is_public_assigned('\u{d7a3}'));
+
+    // Tangut Ideograph
+    assert!(is_public_assigned('\u{17000}'));
+    assert!(is_public_assigned('\u{187f7}'));
+
+    // Tangut Ideograph Supplement
+    assert!(is_public_assigned('\u{18d00}'));
+    assert!(is_public_assigned('\u{18d08}'));
+
+    // CJK Ideograph Extension B
+    assert!(is_public_assigned('\u{20000}'));
+    assert!(is_public_assigned('\u{2a6dd}'));
+
+    // CJK Ideograph Extension C
+    assert!(is_public_assigned('\u{2a700}'));
+    assert!(is_public_assigned('\u{2b734}'));
+
+    // CJK Ideograph Extension D
+    assert!(is_public_assigned('\u{2b740}'));
+    assert!(is_public_assigned('\u{2b81d}'));
+
+    // CJK Ideograph Extension E
+    assert!(is_public_assigned('\u{2b820}'));
+    assert!(is_public_assigned('\u{2cea1}'));
+
+    // CJK Ideograph Extension F
+    assert!(is_public_assigned('\u{2ceb0}'));
+    assert!(is_public_assigned('\u{2ebe0}'));
+
+    // CJK Ideograph Extension G
+    assert!(is_public_assigned('\u{30000}'));
+    assert!(is_public_assigned('\u{3134a}'));
 }
