@@ -10,7 +10,7 @@
 
 use crate::decompose::Decompositions;
 use core::fmt::{self, Write};
-use tinyvec::TinyVec;
+use smallvec::SmallVec;
 
 #[derive(Clone)]
 enum RecompositionState {
@@ -24,7 +24,7 @@ enum RecompositionState {
 pub struct Recompositions<I> {
     iter: Decompositions<I>,
     state: RecompositionState,
-    buffer: TinyVec<[char; 4]>,
+    buffer: SmallVec<[char; 4]>,
     composee: Option<char>,
     last_ccc: Option<u8>,
 }
@@ -34,7 +34,7 @@ pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_canonical(iter),
         state: self::RecompositionState::Composing,
-        buffer: TinyVec::new(),
+        buffer: SmallVec::new(),
         composee: None,
         last_ccc: None,
     }
@@ -45,7 +45,7 @@ pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
     Recompositions {
         iter: super::decompose::new_compatible(iter),
         state: self::RecompositionState::Composing,
-        buffer: TinyVec::new(),
+        buffer: SmallVec::new(),
         composee: None,
         last_ccc: None,
     }

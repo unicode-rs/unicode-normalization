@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 use core::fmt::{self, Write};
-use tinyvec::ArrayVec;
+use smallvec::SmallVec;
 
 /// External iterator for replacements for a string's characters.
 #[derive(Clone)]
@@ -36,7 +36,7 @@ impl<I: Iterator<Item = char>> Iterator for Replacements<I> {
         match self.iter.next() {
             Some(ch) => {
                 // At this time, the longest replacement sequence has length 2.
-                let mut buffer = ArrayVec::<[char; 2]>::new();
+                let mut buffer = SmallVec::<[char; 2]>::new();
                 super::char::decompose_cjk_compat_variants(ch, |d| buffer.push(d));
                 self.buffer = buffer.get(1).copied();
                 Some(buffer[0])
