@@ -50,7 +50,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate core;
 
-extern crate tinyvec;
+extern crate smallvec;
 
 pub use crate::decompose::Decompositions;
 pub use crate::quick_check::{

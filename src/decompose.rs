@@ -10,7 +10,7 @@
 use core::fmt::{self, Write};
 use core::iter::Fuse;
 use core::ops::Range;
-use tinyvec::TinyVec;
+use smallvec::SmallVec;
 
 #[derive(Clone)]
 enum DecompositionType {
@@ -32,7 +32,7 @@ pub struct Decompositions<I> {
     // 2) "Ready" characters which are sorted and ready to emit on demand;
     // 3) A "pending" block which stills needs more characters for us to be able
     //    to sort in canonical order and is not safe to emit.
-    buffer: TinyVec<[(u8, char); 4]>,
+    buffer: SmallVec<[(u8, char); 4]>,
     ready: Range<usize>,
 }
 
@@ -41,7 +41,7 @@ pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Canonical,
         iter: iter.fuse(),
-        buffer: TinyVec::new(),
+        buffer: Default::default(),
         ready: 0..0,
     }
 }
@@ -51,7 +51,7 @@ pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
     Decompositions {
         kind: self::DecompositionType::Compatible,
         iter: iter.fuse(),
-        buffer: TinyVec::new(),
+        buffer: Default::default(),
         ready: 0..0,
     }
 }
@@ -116,16 +116,15 @@ impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
                 (None, _) => {
                     if self.buffer.is_empty() {
                         return None;
-                    } else {
-                        self.sort_pending();
-                        self.ready.end = self.buffer.len();
-
-                        // This implementation means that we can call `next`
-                        // on an exhausted iterator; the last outer `next` call
-                        // will result in an inner `next` call. To make this
-                        // safe, we use `fuse`.
-                        break;
                     }
+                    self.sort_pending();
+                    self.ready.end = self.buffer.len();
+
+                    // This implementation means that we can call `next`
+                    // on an exhausted iterator; the last outer `next` call
+                    // will result in an inner `next` call. To make this
+                    // safe, we use `fuse`.
+                    break;
                 }
             }
         }

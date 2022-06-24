@@ -22,10 +22,8 @@ edition = "2018"
 
 exclude = [ "target/*", "Cargo.lock", "scripts/tmp", "*.txt", "tests/*" ]
 
-[dependencies.tinyvec]
-version = "1"
-features = ["alloc"]
-
+[dependencies]
+smallvec = "1"
 
 [features]
 default = ["std"]
