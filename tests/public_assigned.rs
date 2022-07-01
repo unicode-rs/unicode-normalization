@@ -11,7 +11,6 @@ fn test_public_assigned() {
     assert!(is_public_assigned('\u{7f}'));
     assert!(is_public_assigned('\u{80}'));
     assert!(!is_public_assigned('\u{9e4}'));
-    assert!(!is_public_assigned('\u{fdcf}'));
 
     // Around the first unassigned non-private-use.
     assert!(is_public_assigned('\u{377}'));
