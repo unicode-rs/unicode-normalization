@@ -37,3 +37,11 @@ jobs:
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test
     - name: Test package without features
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test --no-default-features
+  regen:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Regen
+      run: cd scripts && python3 unicode.py
+    - name: Diff
+      run: diff src/tables.rs scripts/tables.rs
