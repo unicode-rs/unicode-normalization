@@ -37,6 +37,17 @@ jobs:
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test
     - name: Test package without features
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test --no-default-features
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install msrv toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: 1.36
+          override: true
+    - name: Build
+      run: cargo build --verbose --all-features
   regen:
     runs-on: ubuntu-latest
     steps:
