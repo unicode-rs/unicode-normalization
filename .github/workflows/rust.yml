@@ -11,7 +11,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTFLAGS: -D warnings
-  RUSTDOCFLAGS: -D warnings --cfg docsrs
+  RUSTDOCFLAGS: -D warnings
 
 jobs:
   build:
@@ -43,6 +43,8 @@ jobs:
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test --no-default-features
     - name: Build docs
       if: matrix.rust == 'nightly'
+      env:
+        RUSTDOCFLAGS: -D warnings --cfg docsrs
       run: cargo doc --all-features --verbose
     - name: Check formatting
       if: matrix.rust == 'stable'

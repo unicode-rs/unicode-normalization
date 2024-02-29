@@ -106,22 +106,27 @@ pub fn compose(a: char, b: char) -> Option<char> {
     compose_hangul(a, b).or_else(|| composition_table(a, b))
 }
 
-// Constants from Unicode 9.0.0 Section 3.12 Conjoining Jamo Behavior
-// http://www.unicode.org/versions/Unicode9.0.0/ch03.pdf#M9.32468.Heading.310.Combining.Jamo.Behavior
-const S_BASE: u32 = 0xAC00;
-const L_BASE: u32 = 0x1100;
-const V_BASE: u32 = 0x1161;
-const T_BASE: u32 = 0x11A7;
-const L_COUNT: u32 = 19;
-const V_COUNT: u32 = 21;
-const T_COUNT: u32 = 28;
-const N_COUNT: u32 = V_COUNT * T_COUNT;
-const S_COUNT: u32 = L_COUNT * N_COUNT;
+/// Constants from Unicode 15.0.0 Section 3.12 Conjoining Jamo Behavior
+/// <http://www.unicode.org/versions/Unicode15.0.0/ch03.pdf#M9.32468.Heading.310.Combining.Jamo.Behavior>
+/// (also found in KS X 1026-1 annex B.1.1 <http://std.dkuug.dk/jtc1/sc2/wg2/docs/n3422.pdf>).
+pub mod hangul_constants {
+    pub const S_BASE: u32 = 0xAC00;
+    pub const L_BASE: u32 = 0x1100;
+    pub const V_BASE: u32 = 0x1161;
+    pub const T_BASE: u32 = 0x11A7;
+    pub const L_COUNT: u32 = 19;
+    pub const V_COUNT: u32 = 21;
+    pub const T_COUNT: u32 = 28;
+    pub const N_COUNT: u32 = V_COUNT * T_COUNT;
+    pub const S_COUNT: u32 = L_COUNT * N_COUNT;
 
-const S_LAST: u32 = S_BASE + S_COUNT - 1;
-const L_LAST: u32 = L_BASE + L_COUNT - 1;
-const V_LAST: u32 = V_BASE + V_COUNT - 1;
-const T_LAST: u32 = T_BASE + T_COUNT - 1;
+    pub const S_LAST: u32 = S_BASE + S_COUNT - 1;
+    pub const L_LAST: u32 = L_BASE + L_COUNT - 1;
+    pub const V_LAST: u32 = V_BASE + V_COUNT - 1;
+    pub const T_LAST: u32 = T_BASE + T_COUNT - 1;
+}
+
+use hangul_constants::*;
 
 // Composition only occurs for `TPart`s in `U+11A8 ... U+11C2`,
 // i.e. `T_BASE + 1 ... T_LAST`.
