@@ -9,7 +9,10 @@
 // except according to those terms.
 
 use crate::decompose::Decompositions;
-use core::fmt::{self, Write};
+use core::{
+    fmt::{self, Write},
+    iter::FusedIterator,
+};
 use tinyvec::TinyVec;
 
 #[derive(Clone)]
@@ -143,6 +146,8 @@ impl<I: Iterator<Item = char>> Iterator for Recompositions<I> {
         }
     }
 }
+
+impl<I: Iterator<Item = char> + FusedIterator> FusedIterator for Recompositions<I> {}
 
 impl<I: Iterator<Item = char> + Clone> fmt::Display for Recompositions<I> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
