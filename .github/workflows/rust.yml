@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTDOCFLAGS: -D warnings --cfg docsrs
 
 jobs:
   build:
@@ -37,6 +38,9 @@ jobs:
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test
     - name: Test package without features
       run: cd $(find target/package/ -maxdepth 1 -mindepth 1 -type d) && cargo test --no-default-features
+    - name: Build docs
+      if: matrix.rust == 'nightly'
+      run: cargo doc --all-features --verbose
   msrv:
     runs-on: ubuntu-latest
     steps:
