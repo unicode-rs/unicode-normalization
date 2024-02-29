@@ -43,5 +43,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Regen
       run: cd scripts && python3 unicode.py
-    - name: Diff
+    - name: Diff tables
       run: diff src/tables.rs scripts/tables.rs
+    - name: Diff tests
+      run: diff tests/data/normalization_tests.rs scripts/normalization_tests.rs
