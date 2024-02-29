@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 use core::fmt::{self, Write};
-use core::iter::Fuse;
+use core::iter::{Fuse, FusedIterator};
 use core::ops::Range;
 use tinyvec::TinyVec;
 
@@ -150,6 +150,8 @@ impl<I: Iterator<Item = char>> Iterator for Decompositions<I> {
         (lower, None)
     }
 }
+
+impl<I: Iterator<Item = char> + FusedIterator> FusedIterator for Decompositions<I> {}
 
 impl<I: Iterator<Item = char> + Clone> fmt::Display for Decompositions<I> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
