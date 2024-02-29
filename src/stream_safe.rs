@@ -110,7 +110,7 @@ mod tests {
     use crate::normalize::decompose_compatible;
 
     #[cfg(not(feature = "std"))]
-    use crate::no_std_prelude::*;
+    use alloc::{string::String, vec::Vec};
 
     use core::char;
 

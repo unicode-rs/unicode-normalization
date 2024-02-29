@@ -7,7 +7,10 @@ on:
     branches: [ master ]
 
 env:
+  CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings --cfg docsrs
 
 jobs:
@@ -21,17 +24,17 @@ jobs:
           - nightly
     steps:
     - uses: actions/checkout@v2
-    - name: Install latest nightly
+    - name: Install toolchain
       uses: actions-rs/toolchain@v1
       with:
           toolchain: ${{ matrix.rust }}
           override: true
     - name: Build
       run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Run tests with all features
+      run: cargo test --all-features --verbose
     - name: Run tests without features
-      run: cargo test --verbose --no-default-features
+      run: cargo test --no-default-features --verbose
     - name: Package
       run: cargo package
     - name: Test package
@@ -41,6 +44,12 @@ jobs:
     - name: Build docs
       if: matrix.rust == 'nightly'
       run: cargo doc --all-features --verbose
+    - name: Check formatting
+      if: matrix.rust == 'stable'
+      run: cargo fmt --all --check
+    - name: Check clippy
+      if: matrix.rust == 'stable'
+      run: cargo clippy --all-features --all --verbose
   msrv:
     runs-on: ubuntu-latest
     steps:
