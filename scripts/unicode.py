@@ -579,6 +579,7 @@ if __name__ == '__main__':
     data = UnicodeData()
     with open("tables.rs", "w", newline = "\n") as out:
         out.write(PREAMBLE)
+        out.write("#![cfg_attr(rustfmt, rustfmt::skip)]\n")
         out.write("use crate::quick_check::IsNormalized;\n")
         out.write("use crate::quick_check::IsNormalized::*;\n")
         out.write("\n")

@@ -62,12 +62,7 @@ pub use crate::recompose::Recompositions;
 pub use crate::replace::Replacements;
 pub use crate::stream_safe::StreamSafe;
 pub use crate::tables::UNICODE_VERSION;
-use core::{
-    str::Chars,
-    option,
-};
-
-mod no_std_prelude;
+use core::{option, str::Chars};
 
 mod decompose;
 mod lookups;
@@ -168,7 +163,6 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
         StreamSafe::new(self.chars())
     }
 }
-
 
 impl UnicodeNormalization<option::IntoIter<char>> for char {
     #[inline]
