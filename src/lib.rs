@@ -72,8 +72,6 @@ mod quick_check;
 mod recompose;
 mod replace;
 mod stream_safe;
-
-#[rustfmt::skip]
 mod tables;
 
 #[doc(hidden)]
