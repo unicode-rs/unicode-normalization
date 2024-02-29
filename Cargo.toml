@@ -40,4 +40,8 @@ features = ["alloc"]
 
 [features]
 default = ["std"]
+ks_x_1026-1 = []
 std = []
+
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "feature=\"ks_x_1026-1\""]
