@@ -73,7 +73,10 @@ pub use crate::quick_check::{
 };
 pub use crate::recompose::Recompositions;
 pub use crate::replace::Replacements;
-pub use crate::standardize_korean_syllables::StandardKoreanSyllables;
+pub use crate::standardize_korean_syllables::StandardizeKoreanSyllables;
+#[cfg(feature = "ks_x_1026-1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
+pub use crate::standardize_korean_syllables::StandardizeKoreanSyllablesKsX1026_1;
 pub use crate::stream_safe::StreamSafe;
 pub use crate::tables::UNICODE_VERSION;
 use core::{option, str::Chars};
@@ -148,9 +151,9 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// inserted according to the Stream-Safe Text Process ([UAX15-D4](https://unicode.org/reports/tr15/#UAX15-D4))
     fn stream_safe(self) -> StreamSafe<I>;
 
-    /// An iterator over the string with Hangul choseong and jugseong filler characters inserted
+    /// An iterator over the string with Hangul choseong and jungseong filler characters inserted
     /// to ensure that all Korean syllable blocks are in standard form according to [UAX29](https://www.unicode.org/reports/tr29/#Transforming_Into_SKS).
-    fn standard_korean_syllables(self) -> StandardKoreanSyllables<I>;
+    fn standard_korean_syllables(self) -> StandardizeKoreanSyllables<I>;
 
     /// An iterator over the string in the variant of Unicode Normalization Form KD
     /// defined by Korean Standard X 1026-1. This normalization differs from that defined by Unicode
@@ -183,6 +186,12 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     #[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
 
     fn nfkc_ks_x_1026_1(self) -> RecomposeHangul<Recompositions<NormalizeJamoKdkc<I>>>;
+
+    /// An iterator over the string with Hangul choseong and jungseong filler characters inserted
+    /// to ensure that all Korean syllable blocks are in standard form according to KS X 1026-1 § 7.8.
+    #[cfg(feature = "ks_x_1026-1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
+    fn standard_korean_syllables_ks_x_1026_1(self) -> StandardizeKoreanSyllablesKsX1026_1<I>;
 }
 
 impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
@@ -217,8 +226,8 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     }
 
     #[inline]
-    fn standard_korean_syllables(self) -> StandardKoreanSyllables<Chars<'a>> {
-        StandardKoreanSyllables::new(self.chars())
+    fn standard_korean_syllables(self) -> StandardizeKoreanSyllables<Chars<'a>> {
+        StandardizeKoreanSyllables::new(self.chars())
     }
 
     #[cfg(feature = "ks_x_1026-1")]
@@ -242,6 +251,14 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
         RecomposeHangul::new(recompose::new_compatible(NormalizeJamoKdkc::new(
             self.chars(),
         )))
+    }
+
+    #[cfg(feature = "ks_x_1026-1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
+    fn standard_korean_syllables_ks_x_1026_1(
+        self,
+    ) -> StandardizeKoreanSyllablesKsX1026_1<Chars<'a>> {
+        StandardizeKoreanSyllablesKsX1026_1::new(self.chars())
     }
 }
 
@@ -277,8 +294,8 @@ impl UnicodeNormalization<option::IntoIter<char>> for char {
     }
 
     #[inline]
-    fn standard_korean_syllables(self) -> StandardKoreanSyllables<option::IntoIter<char>> {
-        StandardKoreanSyllables::new(Some(self).into_iter())
+    fn standard_korean_syllables(self) -> StandardizeKoreanSyllables<option::IntoIter<char>> {
+        StandardizeKoreanSyllables::new(Some(self).into_iter())
     }
 
     #[cfg(feature = "ks_x_1026-1")]
@@ -304,6 +321,14 @@ impl UnicodeNormalization<option::IntoIter<char>> for char {
         RecomposeHangul::new(recompose::new_compatible(NormalizeJamoKdkc::new(
             Some(self).into_iter(),
         )))
+    }
+
+    #[cfg(feature = "ks_x_1026-1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
+    fn standard_korean_syllables_ks_x_1026_1(
+        self,
+    ) -> StandardizeKoreanSyllablesKsX1026_1<option::IntoIter<char>> {
+        StandardizeKoreanSyllablesKsX1026_1::new(Some(self).into_iter())
     }
 }
 
@@ -339,8 +364,8 @@ impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     }
 
     #[inline]
-    fn standard_korean_syllables(self) -> StandardKoreanSyllables<I> {
-        StandardKoreanSyllables::new(self)
+    fn standard_korean_syllables(self) -> StandardizeKoreanSyllables<I> {
+        StandardizeKoreanSyllables::new(self)
     }
 
     #[cfg(feature = "ks_x_1026-1")]
@@ -362,5 +387,11 @@ impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfkc_ks_x_1026_1(self) -> RecomposeHangul<Recompositions<NormalizeJamoKdkc<I>>> {
         RecomposeHangul::new(recompose::new_compatible(NormalizeJamoKdkc::new(self)))
+    }
+
+    #[cfg(feature = "ks_x_1026-1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
+    fn standard_korean_syllables_ks_x_1026_1(self) -> StandardizeKoreanSyllablesKsX1026_1<I> {
+        StandardizeKoreanSyllablesKsX1026_1::new(self)
     }
 }
