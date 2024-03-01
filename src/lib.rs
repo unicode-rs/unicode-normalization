@@ -73,6 +73,7 @@ pub use crate::quick_check::{
 };
 pub use crate::recompose::Recompositions;
 pub use crate::replace::Replacements;
+pub use crate::standardize_korean_syllables::StandardKoreanSyllables;
 pub use crate::stream_safe::StreamSafe;
 pub use crate::tables::UNICODE_VERSION;
 use core::{option, str::Chars};
@@ -86,6 +87,7 @@ mod perfect_hash;
 mod quick_check;
 mod recompose;
 mod replace;
+mod standardize_korean_syllables;
 mod stream_safe;
 
 #[rustfmt::skip]
@@ -145,6 +147,10 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// An iterator over the string with Conjoining Grapheme Joiner characters
     /// inserted according to the Stream-Safe Text Process ([UAX15-D4](https://unicode.org/reports/tr15/#UAX15-D4))
     fn stream_safe(self) -> StreamSafe<I>;
+
+    /// An iterator over the string with Hangul choseong and jugseong filler characters inserted
+    /// to ensure that all Korean syllable blocks are in standard form according to [UAX29](https://www.unicode.org/reports/tr29/#Transforming_Into_SKS).
+    fn standard_korean_syllables(self) -> StandardKoreanSyllables<I>;
 
     /// An iterator over the string in the variant of Unicode Normalization Form KD
     /// defined by Korean Standard X 1026-1. This normalization differs from that defined by Unicode
@@ -210,6 +216,11 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
         StreamSafe::new(self.chars())
     }
 
+    #[inline]
+    fn standard_korean_syllables(self) -> StandardKoreanSyllables<Chars<'a>> {
+        StandardKoreanSyllables::new(self.chars())
+    }
+
     #[cfg(feature = "ks_x_1026-1")]
     #[cfg_attr(docsrs, doc(cfg(feature = "ks_x_1026-1")))]
     #[inline]
@@ -263,6 +274,11 @@ impl UnicodeNormalization<option::IntoIter<char>> for char {
     #[inline]
     fn stream_safe(self) -> StreamSafe<option::IntoIter<char>> {
         StreamSafe::new(Some(self).into_iter())
+    }
+
+    #[inline]
+    fn standard_korean_syllables(self) -> StandardKoreanSyllables<option::IntoIter<char>> {
+        StandardKoreanSyllables::new(Some(self).into_iter())
     }
 
     #[cfg(feature = "ks_x_1026-1")]
@@ -320,6 +336,11 @@ impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     #[inline]
     fn stream_safe(self) -> StreamSafe<I> {
         StreamSafe::new(self)
+    }
+
+    #[inline]
+    fn standard_korean_syllables(self) -> StandardKoreanSyllables<I> {
+        StandardKoreanSyllables::new(self)
     }
 
     #[cfg(feature = "ks_x_1026-1")]
