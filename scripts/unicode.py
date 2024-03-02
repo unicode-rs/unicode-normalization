@@ -419,7 +419,7 @@ def gen_qc_match(prop_table, out):
         assert data in ('N', 'M')
         result = "No" if data == 'N' else "Maybe"
         if high:
-            out.write(r"        '\u{%s}'...'\u{%s}' => %s," % (low, high, result))
+            out.write(r"        '\u{%s}'..='\u{%s}' => %s," % (low, high, result))
         else:
             out.write(r"        '\u{%s}' => %s," % (low, result))
         out.write("\n")
