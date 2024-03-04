@@ -52,6 +52,7 @@ extern crate core;
 
 extern crate tinyvec;
 
+pub use crate::correct_ccs::CorrectDefectiveCcs;
 pub use crate::decompose::Decompositions;
 pub use crate::quick_check::{
     is_nfc, is_nfc_quick, is_nfc_stream_safe, is_nfc_stream_safe_quick, is_nfd, is_nfd_quick,
@@ -64,6 +65,7 @@ pub use crate::stream_safe::StreamSafe;
 pub use crate::tables::UNICODE_VERSION;
 use core::{option, str::Chars};
 
+mod correct_ccs;
 mod decompose;
 mod lookups;
 mod normalize;
@@ -128,6 +130,19 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// An Iterator over the string with Conjoining Grapheme Joiner characters
     /// inserted according to the Stream-Safe Text Process (UAX15-D4)
     fn stream_safe(self) -> StreamSafe<I>;
+
+    /// An iterator over the string with
+    /// [defective combining character sequences](https://www.unicode.org/versions/Unicode15.0.0/UnicodeStandard-15.0.pdf#I6.1.36487)
+    /// corrected via the insertion of U+00A0 NO-BREAK SPACE.
+    ///
+    /// Sequences starting with a private use character or an unassigned codepoint that is not a noncharacter
+    /// are not corrected. Additionally, combining character sequences consisting entirely of
+    /// [default-ignorable code points](https://www.unicode.org/versions/Unicode15.0.0/UnicodeStandard-15.0.pdf#I8.1.40715)
+    /// are also left untouched. Handling this last case may require the iterator
+    /// to buffer up to the entire length of the input;
+    /// this iterator is therefore *not* "stream safe"
+    /// *even if* used in combination with [`stream_safe()`][UnicodeNormalization::stream_safe].
+    fn correct_defective_ccs(self) -> CorrectDefectiveCcs<I>;
 }
 
 impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
@@ -159,6 +174,11 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     #[inline]
     fn stream_safe(self) -> StreamSafe<Chars<'a>> {
         StreamSafe::new(self.chars())
+    }
+
+    #[inline]
+    fn correct_defective_ccs(self) -> CorrectDefectiveCcs<Chars<'a>> {
+        CorrectDefectiveCcs::new(self.chars())
     }
 }
 
@@ -192,6 +212,11 @@ impl UnicodeNormalization<option::IntoIter<char>> for char {
     fn stream_safe(self) -> StreamSafe<option::IntoIter<char>> {
         StreamSafe::new(Some(self).into_iter())
     }
+
+    #[inline]
+    fn correct_defective_ccs(self) -> CorrectDefectiveCcs<option::IntoIter<char>> {
+        CorrectDefectiveCcs::new(Some(self).into_iter())
+    }
 }
 
 impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
@@ -223,5 +248,10 @@ impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     #[inline]
     fn stream_safe(self) -> StreamSafe<I> {
         StreamSafe::new(self)
+    }
+
+    #[inline]
+    fn correct_defective_ccs(self) -> CorrectDefectiveCcs<I> {
+        CorrectDefectiveCcs::new(self)
     }
 }

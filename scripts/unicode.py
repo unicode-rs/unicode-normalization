@@ -19,6 +19,7 @@
 # Since this should not require frequent updates, we just store this
 # out-of-line and check the tables.rs and normalization_tests.rs files into git.
 import collections
+import re
 import urllib.request
 from itertools import batched
 
@@ -67,6 +68,8 @@ S_COUNT = L_COUNT * V_COUNT * T_COUNT
 class UnicodeData(object):
     def __init__(self):
         self._load_unicode_data()
+        self._load_default_ignorable_marks()
+
         self.norm_props = self._load_norm_props()
         self.norm_tests = self._load_norm_tests()
 
@@ -101,6 +104,11 @@ class UnicodeData(object):
         self.general_category_mark = []
         self.general_category_public_assigned = []
 
+        # Characters that cannot be part of a combining character sequence:
+        # control characters, format characters other than ZWJ and ZWNJ,
+        # the line and paragraph separators, and noncharacters.
+        self.not_in_ccs = []
+
         assigned_start = 0;
         prev_char_int = -1;
         prev_name = "";
@@ -126,6 +134,9 @@ class UnicodeData(object):
             if category == 'M' or 'M' in expanded_categories.get(category, []):
                 self.general_category_mark.append(char_int)
 
+            if category in ['Cc', 'Cf', 'Zl', 'Zp'] and char_int not in [0x200C, 0x200D]:
+                self.not_in_ccs.append(char_int)
+
             assert category != 'Cn', "Unexpected: Unassigned codepoint in UnicodeData.txt"
             if category not in ['Co', 'Cs']:
                 if char_int != prev_char_int + 1 and not is_first_and_last(prev_name, name):
@@ -135,6 +146,44 @@ class UnicodeData(object):
                 prev_name = name;
 
         self.general_category_public_assigned.append((assigned_start, prev_char_int))
+
+        # Mark noncharacters as nongraphic
+        for i in range(0xFDD0, 0xFDF0):
+            self.not_in_ccs.append(i)
+        for prefix in range(0, 0x11):
+            shifted = prefix << 16
+            self.not_in_ccs.append(shifted | 0xFFFE)
+            self.not_in_ccs.append(shifted | 0xFFFF)
+
+        self.not_in_ccs.sort()
+
+    def _load_default_ignorable_marks(self):
+        default_ignorable_cps = set()
+
+        single = re.compile(r"^([0-9A-F]+)\s+;\s+Default_Ignorable_Code_Point\s+")
+        multiple = re.compile(
+            r"^([0-9A-F]+)\.\.([0-9A-F]+)\s+;\s+Default_Ignorable_Code_Point\s+"
+        )
+
+        for line in self._fetch("DerivedCoreProperties.txt").splitlines():
+            raw_data = None  # (low, high)
+            if match := single.match(line):
+                raw_data = (match.group(1), match.group(1))
+            elif match := multiple.match(line):
+                raw_data = (match.group(1), match.group(2))
+            else:
+                continue
+            low = int(raw_data[0], 16)
+            high = int(raw_data[1], 16)
+            for cp in range(low, high + 1):
+                default_ignorable_cps.add(cp)
+
+        self.default_ignorable_marks = []
+        for cp in self.general_category_mark:
+            if cp in default_ignorable_cps:
+                self.default_ignorable_marks.append(cp)
+
+        self.default_ignorable_marks.sort()
 
     def _load_cjk_compat_ideograph_variants(self):
         for line in self._fetch("StandardizedVariants.txt").splitlines():
@@ -461,12 +510,72 @@ def gen_combining_mark(general_category_mark, out):
 
 def gen_public_assigned(general_category_public_assigned, out):
     # This could be done as a hash but the table is somewhat small.
-    out.write("#[inline]\n")
+    out.write("\n#[inline]\n")
     out.write("pub fn is_public_assigned(c: char) -> bool {\n")
     out.write("    match c {\n")
 
     start = True
     for first, last in general_category_public_assigned:
+        if start:
+            out.write("        ")
+            start = False
+        else:
+            out.write("\n        | ")
+        if first == last:
+            out.write("'\\u{%s}'" % hexify(first))
+        else:
+            out.write("'\\u{%s}'..='\\u{%s}'" % (hexify(first), hexify(last)))
+    out.write(" => true,\n")
+
+    out.write("        _ => false,\n")
+    out.write("    }\n")
+    out.write("}\n")
+
+def gen_not_in_ccs(not_in_ccs, out):
+    # List of codepoints to list of ranges
+    range_list = []
+    for cp in not_in_ccs:
+        if len(range_list) != 0 and range_list[-1][1] == cp - 1:
+            range_list[-1] = (range_list[-1][0], cp)
+        else:
+            range_list.append((cp, cp))
+
+    out.write("\n#[inline]\n")
+    out.write("pub fn not_in_ccs(c: char) -> bool {\n")
+    out.write("    match c {\n")
+
+    start = True
+    for first, last in range_list:
+        if start:
+            out.write("        ")
+            start = False
+        else:
+            out.write("\n        | ")
+        if first == last:
+            out.write("'\\u{%s}'" % hexify(first))
+        else:
+            out.write("'\\u{%s}'..='\\u{%s}'" % (hexify(first), hexify(last)))
+    out.write(" => true,\n")
+
+    out.write("        _ => false,\n")
+    out.write("    }\n")
+    out.write("}\n")
+
+def gen_default_ignorable_mark(default_ignorable_marks, out):
+    # List of codepoints to list of ranges
+    range_list = []
+    for cp in default_ignorable_marks:
+        if len(range_list) != 0 and range_list[-1][1] == cp - 1:
+            range_list[-1] = (range_list[-1][0], cp)
+        else:
+            range_list.append((cp, cp))
+
+    out.write("\n#[inline]\n")
+    out.write("pub fn is_default_ignorable_mark(c: char) -> bool {\n")
+    out.write("    match c {\n")
+
+    start = True
+    for first, last in range_list:
         if start:
             out.write("        ")
             start = False
@@ -601,6 +710,10 @@ if __name__ == '__main__':
         gen_combining_mark(data.general_category_mark, out)
 
         gen_public_assigned(data.general_category_public_assigned, out)
+
+        gen_not_in_ccs(data.not_in_ccs, out)
+
+        gen_default_ignorable_mark(data.default_ignorable_marks, out)
 
         gen_nfc_qc(data.norm_props, out)
 
