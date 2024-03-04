@@ -13,9 +13,9 @@
 #[macro_use]
 extern crate libfuzzer_sys;
 
-use std::str::Chars;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::str::Chars;
 use unicode_normalization::{char::canonical_combining_class, UnicodeNormalization};
 
 const MAX_NONSTARTERS: u32 = 30;
@@ -43,8 +43,11 @@ impl<'a> Iterator for Counter<'a> {
 fuzz_target!(|input: String| {
     let stream_safe = input.chars().stream_safe().collect::<String>();
 
-    let mut value = Rc::new(RefCell::new(0));
-    let counter = Counter { iter: stream_safe.chars(), value: Rc::clone(&mut value) };
+    let value = Rc::new(RefCell::new(0));
+    let counter = Counter {
+        iter: stream_safe.chars(),
+        value: Rc::clone(&value),
+    };
     for _ in counter.nfc() {
         // Plus 1: The iterator may consume a starter that begins the next sequence.
         assert!(*value.borrow() <= MAX_NONSTARTERS + 1);
