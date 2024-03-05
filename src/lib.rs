@@ -133,9 +133,13 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
 
     /// An iterator over the string with
     /// [defective combining character sequences](https://www.unicode.org/versions/Unicode15.0.0/UnicodeStandard-15.0.pdf#I6.1.36487)
-    /// corrected via the insertion of U+00A0 NO-BREAK SPACE.
+    /// corrected via the insertion of U+00A0 NO-BREAK SPACE in front of them.
     ///
-    /// Sequences starting with a private use character or an unassigned codepoint that is not a noncharacter
+    /// This helps ensure that the sequences will be displayed correctly and consistently,
+    /// with the correct advance width,
+    /// in diverse contexts (for example, when printed to a terminal).
+    ///
+    /// Sequences following a private use character or an unassigned codepoint that is not a noncharacter
     /// are not corrected. Additionally, combining character sequences consisting entirely of
     /// [default-ignorable code points](https://www.unicode.org/versions/Unicode15.0.0/UnicodeStandard-15.0.pdf#I8.1.40715)
     /// are also left untouched. Handling this last case may require the iterator

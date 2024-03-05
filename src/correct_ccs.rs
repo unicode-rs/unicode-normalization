@@ -44,7 +44,7 @@ impl CcsKind {
 /// For the purposes of this iterator, private use characters,
 /// as well as unassigned codepoints other than noncharacters,
 /// are considered valid base characters,
-/// so combining character sequences that start with such will not be modified.
+/// so combining character sequences that follow such will not be modified.
 ///
 /// In addition, combining character sequences that consist entirely of `Default_Ignorable_Code_Point`s
 /// will not be modified. (Because of this, this iterator may buffer up to the entire length of its input;
