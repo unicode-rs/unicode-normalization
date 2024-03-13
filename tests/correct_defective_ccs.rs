@@ -18,7 +18,7 @@ fn defective_css() {
     check_ccs!("\u{200C}\u{0301}bcde", "\u{00A0}\u{200C}\u{0301}bcde");
     check_ccs!("\u{200C}bcde", "\u{200C}bcde");
     check_ccs!("\u{180F}bcde", "\u{180F}bcde");
-    check_ccs!("\u{FFFF}\u{0301}bcde", "\u{FFFF}\u{00A0}\u{0301}bcde");
+    check_ccs!("\u{FFFF}\u{0301}bcde", "\u{FFFF}\u{0301}bcde");
     check_ccs!("\u{10FFFD}\u{0301}bcde", "\u{10FFFD}\u{0301}bcde");
     check_ccs!("\u{180F}\u{180F}\u{180F}", "\u{180F}\u{180F}\u{180F}");
     check_ccs!("\u{180F}\u{180F}\u{180F}a", "\u{180F}\u{180F}\u{180F}a");

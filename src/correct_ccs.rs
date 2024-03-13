@@ -41,8 +41,7 @@ impl CcsKind {
 /// [defective combining character sequences](https://www.unicode.org/versions/Unicode15.0.0/UnicodeStandard-15.0.pdf#I6.1.36487)
 /// by inserting U+00A0 NO-BREAK SPACE in front of them.
 ///
-/// For the purposes of this iterator, private use characters,
-/// as well as unassigned codepoints other than noncharacters,
+/// For the purposes of this iterator, private use characters and unassigned codepoints
 /// are considered valid base characters,
 /// so combining character sequences that follow such will not be modified.
 ///

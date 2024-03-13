@@ -139,7 +139,7 @@ pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     /// with the correct advance width,
     /// in diverse contexts (for example, when printed to a terminal).
     ///
-    /// Sequences following a private use character or an unassigned codepoint that is not a noncharacter
+    /// Sequences following a private use character or an unassigned codepoint
     /// are not corrected. Additionally, combining character sequences consisting entirely of
     /// [default-ignorable code points](https://www.unicode.org/versions/Unicode15.0.0/UnicodeStandard-15.0.pdf#I8.1.40715)
     /// are also left untouched. Handling this last case may require the iterator

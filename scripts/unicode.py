@@ -106,7 +106,7 @@ class UnicodeData(object):
 
         # Characters that cannot be part of a combining character sequence:
         # control characters, format characters other than ZWJ and ZWNJ,
-        # the line and paragraph separators, and noncharacters.
+        # and the line and paragraph separators.
         self.not_in_ccs = []
 
         assigned_start = 0;
@@ -146,14 +146,6 @@ class UnicodeData(object):
                 prev_name = name;
 
         self.general_category_public_assigned.append((assigned_start, prev_char_int))
-
-        # Mark noncharacters as nongraphic
-        for i in range(0xFDD0, 0xFDF0):
-            self.not_in_ccs.append(i)
-        for prefix in range(0, 0x11):
-            shifted = prefix << 16
-            self.not_in_ccs.append(shifted | 0xFFFE)
-            self.not_in_ccs.append(shifted | 0xFFFF)
 
         self.not_in_ccs.sort()
 
