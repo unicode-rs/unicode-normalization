@@ -36,23 +36,33 @@ pub struct Decompositions<I> {
     ready: Range<usize>,
 }
 
-#[inline]
-pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
-    Decompositions {
-        kind: self::DecompositionType::Canonical,
-        iter: iter.fuse(),
-        buffer: TinyVec::new(),
-        ready: 0..0,
+impl<I: Iterator<Item = char>> Decompositions<I> {
+    /// Create a new decomposition iterator for canonical decompositions (NFD)
+    ///
+    /// Note that this iterator can also be obtained by directly calling [`.nfd()`](crate::UnicodeNormalization::nfd)
+    /// on the iterator.
+    #[inline]
+    pub fn new_canonical(iter: I) -> Decompositions<I> {
+        Decompositions {
+            kind: self::DecompositionType::Canonical,
+            iter: iter.fuse(),
+            buffer: TinyVec::new(),
+            ready: 0..0,
+        }
     }
-}
 
-#[inline]
-pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Decompositions<I> {
-    Decompositions {
-        kind: self::DecompositionType::Compatible,
-        iter: iter.fuse(),
-        buffer: TinyVec::new(),
-        ready: 0..0,
+    /// Create a new decomposition iterator for compatability decompositions (NFkD)
+    ///
+    /// Note that this iterator can also be obtained by directly calling [`.nfd()`](crate::UnicodeNormalization::nfd)
+    /// on the iterator.
+    #[inline]
+    pub fn new_compatible(iter: I) -> Decompositions<I> {
+        Decompositions {
+            kind: self::DecompositionType::Compatible,
+            iter: iter.fuse(),
+            buffer: TinyVec::new(),
+            ready: 0..0,
+        }
     }
 }
 

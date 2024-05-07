@@ -32,25 +32,35 @@ pub struct Recompositions<I> {
     last_ccc: Option<u8>,
 }
 
-#[inline]
-pub fn new_canonical<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
-    Recompositions {
-        iter: super::decompose::new_canonical(iter),
-        state: self::RecompositionState::Composing,
-        buffer: TinyVec::new(),
-        composee: None,
-        last_ccc: None,
+impl<I: Iterator<Item = char>> Recompositions<I> {
+    /// Create a new recomposition iterator for canonical compositions (NFC)
+    ///
+    /// Note that this iterator can also be obtained by directly calling [`.nfc()`](crate::UnicodeNormalization::nfc)
+    /// on the iterator.
+    #[inline]
+    pub fn new_canonical(iter: I) -> Self {
+        Recompositions {
+            iter: Decompositions::new_canonical(iter),
+            state: self::RecompositionState::Composing,
+            buffer: TinyVec::new(),
+            composee: None,
+            last_ccc: None,
+        }
     }
-}
 
-#[inline]
-pub fn new_compatible<I: Iterator<Item = char>>(iter: I) -> Recompositions<I> {
-    Recompositions {
-        iter: super::decompose::new_compatible(iter),
-        state: self::RecompositionState::Composing,
-        buffer: TinyVec::new(),
-        composee: None,
-        last_ccc: None,
+    /// Create a new recomposition iterator for compatability compositions (NFkC)
+    ///
+    /// Note that this iterator can also be obtained by directly calling [`.nfkc()`](crate::UnicodeNormalization::nfkc)
+    /// on the iterator.
+    #[inline]
+    pub fn new_compatible(iter: I) -> Self {
+        Recompositions {
+            iter: Decompositions::new_compatible(iter),
+            state: self::RecompositionState::Composing,
+            buffer: TinyVec::new(),
+            composee: None,
+            last_ccc: None,
+        }
     }
 }
 
