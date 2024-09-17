@@ -1217,6 +1217,8 @@ pub(crate) const COMPOSITION_TABLE_KV: &[(u32, char)] = &[
 ];
 pub(crate) fn composition_table_astral(c1: char, c2: char) -> Option<char> {
     match (c1, c2) {
+        ('\u{105D2}', '\u{0307}') => Some('\u{105C9}'),
+        ('\u{105DA}', '\u{0307}') => Some('\u{105E4}'),
         ('\u{11099}', '\u{110BA}') => Some('\u{1109A}'),
         ('\u{1109B}', '\u{110BA}') => Some('\u{1109C}'),
         ('\u{110A5}', '\u{110BA}') => Some('\u{110AB}'),
