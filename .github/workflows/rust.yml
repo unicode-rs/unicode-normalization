@@ -67,10 +67,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install msrv toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: 1.36
-          override: true
+      uses: dtolnay/rust-toolchain@1.36.0
+    - name: Use tinyvec 1.6.0
+      run: cargo update -p tinyvec --precise 1.6.0
     - name: Build
       run: cargo build --verbose --all-features
   regen:

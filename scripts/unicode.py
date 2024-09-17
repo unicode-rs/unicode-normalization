@@ -22,7 +22,7 @@ import collections
 import urllib.request
 from itertools import batched
 
-UNICODE_VERSION = "15.1.0"
+UNICODE_VERSION = "16.0.0"
 UCD_URL = "https://www.unicode.org/Public/%s/ucd/" % UNICODE_VERSION
 
 PREAMBLE = """// Copyright 2012-2018 The Rust Project Developers. See the COPYRIGHT
@@ -388,7 +388,7 @@ def gen_composition_table(canon_comp, out):
     out.write("pub(crate) fn composition_table_astral(c1: char, c2: char) -> Option<char> {\n")
     out.write("    match (c1, c2) {\n")
     for (c1, c2), c3 in sorted(canon_comp.items()):
-        if c1 >= 0x10000 and c2 >= 0x10000:
+        if c1 >= 0x10000 or c2 >= 0x10000:
             out.write("        ('\\u{%s}', '\\u{%s}') => Some('\\u{%s}'),\n" % (hexify(c1), hexify(c2), hexify(c3)))
 
     out.write("        _ => None,\n")
