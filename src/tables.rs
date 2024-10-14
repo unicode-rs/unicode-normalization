@@ -20414,6 +20414,7 @@ pub(crate) const COMBINING_MARK_KV: &[u32] = &[
     0x114B4, 0x01BE8, 0x16F83, 0x009CB, 0x01C27, 0x1DA9E, 0x114B6, 0x00AFF, 0x0AAB2, 0x1E94A,
     0x1E023,
 ];
+
 #[inline]
 pub fn is_public_assigned(c: char) -> bool {
     match c {
@@ -21145,6 +21146,50 @@ pub fn is_public_assigned(c: char) -> bool {
         | '\u{31350}'..='\u{323AF}'
         | '\u{E0001}'
         | '\u{E0020}'..='\u{E007F}'
+        | '\u{E0100}'..='\u{E01EF}' => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub fn not_in_ccs(c: char) -> bool {
+    match c {
+        '\u{0000}'..='\u{001F}'
+        | '\u{007F}'..='\u{009F}'
+        | '\u{00AD}'
+        | '\u{0600}'..='\u{0605}'
+        | '\u{061C}'
+        | '\u{06DD}'
+        | '\u{070F}'
+        | '\u{0890}'..='\u{0891}'
+        | '\u{08E2}'
+        | '\u{180E}'
+        | '\u{200B}'
+        | '\u{200E}'..='\u{200F}'
+        | '\u{2028}'..='\u{202E}'
+        | '\u{2060}'..='\u{2064}'
+        | '\u{2066}'..='\u{206F}'
+        | '\u{FEFF}'
+        | '\u{FFF9}'..='\u{FFFB}'
+        | '\u{110BD}'
+        | '\u{110CD}'
+        | '\u{13430}'..='\u{1343F}'
+        | '\u{1BCA0}'..='\u{1BCA3}'
+        | '\u{1D173}'..='\u{1D17A}'
+        | '\u{E0001}'
+        | '\u{E0020}'..='\u{E007F}' => true,
+        _ => false,
+    }
+}
+
+#[inline]
+pub fn is_default_ignorable_mark(c: char) -> bool {
+    match c {
+        '\u{034F}'
+        | '\u{17B4}'..='\u{17B5}'
+        | '\u{180B}'..='\u{180D}'
+        | '\u{180F}'
+        | '\u{FE00}'..='\u{FE0F}'
         | '\u{E0100}'..='\u{E01EF}' => true,
         _ => false,
     }
