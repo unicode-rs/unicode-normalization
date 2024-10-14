@@ -10,17 +10,24 @@ use crate::tables::stream_safe_leading_nonstarters;
 pub(crate) const MAX_NONSTARTERS: usize = 30;
 const COMBINING_GRAPHEME_JOINER: char = '\u{034F}';
 
-/// UAX15-D4: This iterator keeps track of how many non-starters there have been
+/// [UAX15-D4]: This iterator keeps track of how many non-starters there have been
 /// since the last starter in *NFKD* and will emit a Combining Grapheme Joiner
 /// (U+034F) if the count exceeds 30.
+///
+/// [UAX15-D4]: https://www.unicode.org/reports/tr15/#UAX15-D4
 pub struct StreamSafe<I> {
     iter: I,
     nonstarter_count: usize,
     buffer: Option<char>,
 }
 
-impl<I> StreamSafe<I> {
-    pub(crate) fn new(iter: I) -> Self {
+impl<I: Iterator<Item = char>> StreamSafe<I> {
+    /// Create a new stream safe iterator.
+    ///
+    /// Note that this iterator can also be obtained by directly calling [`.stream_safe()`](crate::UnicodeNormalization::stream_safe)
+    /// on the iterator.
+    #[inline]
+    pub fn new(iter: I) -> Self {
         Self {
             iter,
             nonstarter_count: 0,
