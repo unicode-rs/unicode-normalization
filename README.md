@@ -21,6 +21,11 @@ fn main() {
     let s = "ÅΩ";
     let c = s.nfc().collect::<String>();
     assert_eq!(c, "ÅΩ");
+
+    let s = "cafè";
+    // diacritics are not part of ascii thus get filtered out.
+    let c = s.nfkd().filter(|c| c.is_ascii()).collect::<String>();
+    assert_eq!(c, "cafe");
 }
 ```
 
