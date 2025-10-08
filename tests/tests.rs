@@ -1,6 +1,6 @@
 extern crate unicode_normalization;
-use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::__test_api::stream_safe;
+use unicode_normalization::UnicodeNormalization;
 
 mod data {
     pub mod normalization_tests;
