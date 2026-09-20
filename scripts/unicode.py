@@ -463,7 +463,8 @@ def gen_public_assigned(general_category_public_assigned, out):
     # This could be done as a hash but the table is somewhat small.
     out.write("#[inline]\n")
     out.write("pub fn is_public_assigned(c: char) -> bool {\n")
-    out.write("    match c {\n")
+    out.write("    matches!(\n")
+    out.write("        c,\n")
 
     start = True
     for first, last in general_category_public_assigned:
@@ -476,10 +477,9 @@ def gen_public_assigned(general_category_public_assigned, out):
             out.write("'\\u{%s}'" % hexify(first))
         else:
             out.write("'\\u{%s}'..='\\u{%s}'" % (hexify(first), hexify(last)))
-    out.write(" => true,\n")
+    out.write(",\n")
 
-    out.write("        _ => false,\n")
-    out.write("    }\n")
+    out.write("    )\n")
     out.write("}\n")
 
 def gen_stream_safe(leading, trailing, out):

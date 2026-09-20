@@ -34,7 +34,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! unicode-normalization = "0.1.20"
+#![doc = concat!("unicode-normalization = \"", env!("CARGO_PKG_VERSION"), "\"")]
 //! ```
 
 #![deny(missing_docs, unsafe_code)]
@@ -54,9 +54,10 @@ extern crate tinyvec;
 
 pub use crate::decompose::Decompositions;
 pub use crate::quick_check::{
-    is_nfc, is_nfc_quick, is_nfc_stream_safe, is_nfc_stream_safe_quick, is_nfd, is_nfd_quick,
-    is_nfd_stream_safe, is_nfd_stream_safe_quick, is_nfkc, is_nfkc_quick, is_nfkd, is_nfkd_quick,
-    IsNormalized,
+    check_nfc, check_nfc_quick, check_nfc_stream_safe, check_nfc_stream_safe_quick, check_nfd,
+    check_nfd_quick, check_nfd_stream_safe, check_nfd_stream_safe_quick, check_nfkc,
+    check_nfkc_quick, check_nfkd, check_nfkd_quick, is_nfc, is_nfc_stream_safe, is_nfd,
+    is_nfd_stream_safe, is_nfkc, is_nfkd, NormalizationError, QuickCheck,
 };
 pub use crate::recompose::Recompositions;
 pub use crate::replace::Replacements;

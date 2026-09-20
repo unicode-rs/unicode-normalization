@@ -20592,7 +20592,8 @@ pub(crate) const COMBINING_MARK_KV: &[u32] = &[
 ];
 #[inline]
 pub fn is_public_assigned(c: char) -> bool {
-    match c {
+    matches!(
+        c,
         '\u{0000}'..='\u{0377}'
         | '\u{037A}'..='\u{037F}'
         | '\u{0384}'..='\u{038A}'
@@ -21325,9 +21326,8 @@ pub fn is_public_assigned(c: char) -> bool {
         | '\u{3D000}'..='\u{3FC3F}'
         | '\u{E0001}'
         | '\u{E0020}'..='\u{E007F}'
-        | '\u{E0100}'..='\u{E01EF}' => true,
-        _ => false,
-    }
+        | '\u{E0100}'..='\u{E01EF}',
+    )
 }
 
 #[inline]
