@@ -60,7 +60,7 @@ pub use crate::quick_check::{
 };
 pub use crate::recompose::Recompositions;
 pub use crate::replace::Replacements;
-pub use crate::stream_safe::StreamSafe;
+pub use crate::stream_safe::{StreamSafe, StreamSafeState};
 pub use crate::tables::UNICODE_VERSION;
 use core::{option, str::Chars};
 
